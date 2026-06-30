@@ -124,13 +124,13 @@
   .now .meta b{color:var(--text); font-weight:600;}
   .fc-row{display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
   .fc{
-    flex:0 0 auto; width:110px; background:var(--panel2); border:1px solid var(--line);
-    border-radius:8px; padding:9px; text-align:center;
+    flex:0 0 auto; width:148px; background:var(--panel2); border:1px solid var(--line);
+    border-radius:8px; padding:12px 11px; text-align:center;
   }
-  .fc .nm{font-size:11px; font-weight:700; color:var(--accent); height:30px; overflow:hidden;}
-  .fc .tm{font-size:20px; font-weight:800; margin:4px 0;}
-  .fc .ds{font-size:10px; color:var(--muted); height:46px; overflow:hidden;}
-  .fc .wind{font-size:10px; color:#9fb3d4; margin-top:4px;}
+  .fc .nm{font-size:14px; font-weight:700; color:var(--accent); height:40px; overflow:hidden;}
+  .fc .tm{font-size:30px; font-weight:800; margin:6px 0;}
+  .fc .ds{font-size:13px; color:#c4d1e6; line-height:1.35; min-height:70px; overflow:hidden;}
+  .fc .wind{font-size:12px; color:#9fb3d4; margin-top:6px;}
 
   /* Tables / lists */
   table{width:100%; border-collapse:collapse; font-size:13px;}
@@ -289,11 +289,7 @@ const WFO = "DTX";                         // Detroit/Pontiac
 const UA_HEADERS = { "Accept":"application/geo+json", "User-Agent":"SCC-EOC-Dashboard (stclaircounty.org)" };
 const USGS_SITES = [
   {id:"04159130", name:"St. Clair River at Port Huron"},
-  {id:"04160421", name:"St. Clair River DS Pine River at St. Clair"},
-  {id:"04160600", name:"Belle River at Memphis"},
-  {id:"04160595", name:"Belle River near Memphis"},
-  {id:"04160615", name:"Belle River at Richmond (US-25)"},
-  {id:"04160050", name:"Black River near Port Huron"}
+  {id:"04160600", name:"Belle River at Memphis"}
 ];
 const NOAA_WL_STATION = "9014090"; // Mouth of Black River (Great Lakes water level)
 
