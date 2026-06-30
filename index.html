@@ -165,6 +165,20 @@
   .s-amber{background:rgba(255,176,32,.16); color:var(--warn); border:1px solid rgba(255,176,32,.4);}
   .s-red{background:rgba(255,77,77,.16); color:var(--sev); border:1px solid rgba(255,77,77,.4);}
 
+  /* USACE stage profile */
+  .stage-row{display:grid; grid-template-columns:1.6fr 2.2fr auto; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line);}
+  .stage-row .sg-name{font-size:13px; font-weight:600;}
+  .stage-row .sg-name small{display:block; color:var(--muted); font-weight:400; font-size:10px;}
+  .sg-bar{height:14px; background:#0e1623; border:1px solid var(--line); border-radius:7px; overflow:hidden; position:relative;}
+  .sg-bar > span{display:block; height:100%; background:linear-gradient(90deg,#1d6fd0,#3da5ff); border-radius:7px;}
+  .stage-row .sg-val{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .stage-row .sg-val small{color:var(--muted); font-weight:600; font-size:11px;}
+  .fall-note{font-size:12px; color:#c4d1e6; margin:2px 0 10px; padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:8px;}
+  .fall-note b{color:var(--accent);}
+  /* Marine */
+  .mar-period{padding:7px 0; border-bottom:1px solid var(--line);}
+  .mar-period .mp-n{font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.3px;}
+  .mar-period .mp-t{font-size:12px; color:#cdd8ec; margin-top:2px;}
   .loading{color:var(--muted); font-size:13px; padding:6px 0;}
   .err{color:var(--warn); font-size:12px;}
   .upd{font-size:10px; color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0;}
@@ -244,6 +258,18 @@
     <section class="card col-5">
       <h2><span>Seismic Activity &mdash; Great Lakes Region <span class="dot live"></span></span><span class="upd" id="upd-quake"></span></h2>
       <div class="body" id="quakes"><div class="loading">Loading USGS earthquake feed&hellip;</div></div>
+    </section>
+
+    <!-- USACE ST. CLAIR RIVER STAGE PROFILE -->
+    <section class="card col-7">
+      <h2><span>Army Corps of Engineers &mdash; St. Clair River Stage Profile <span class="dot live"></span></span><span class="upd" id="upd-usace"></span></h2>
+      <div class="body" id="usace"><div class="loading">Loading USACE Detroit District gauges&hellip;</div></div>
+    </section>
+
+    <!-- MARINE WEATHER -->
+    <section class="card col-5">
+      <h2><span>Marine Weather &mdash; Adjacent Waters <span class="dot live"></span></span><span class="upd" id="upd-marine"></span></h2>
+      <div class="body" id="marine"><div class="loading">Loading marine forecast &amp; warnings&hellip;</div></div>
     </section>
 
     <!-- HAZARDOUS WEATHER OUTLOOK -->
@@ -473,6 +499,88 @@ async function loadQuakes(){
   }catch(e){ el.innerHTML = `<div class="err">Earthquake feed unavailable (${e.message}).</div>`; }
 }
 
+/* ===================== USACE St. Clair River Stage Profile ===================== */
+const USACE_GAUGES = [
+  {tsid:"FortGratiot.Stage.Inst.1Hour.0.noaa-rev",   name:"Fort Gratiot",          note:"Head of river / Lake Huron"},
+  {tsid:"MouthBlackRiver.Stage.Inst.1Hour.0.noaa-rev",name:"Mouth of Black River",  note:"Port Huron"},
+  {tsid:"StClairSP.Stage.Inst.1Hour.0.noaa-rev",     name:"St. Clair State Police", note:"Mid-river"},
+  {tsid:"Algonac.Stage.Inst.1Hour.0.noaa-rev",       name:"Algonac",               note:"Near Lake St. Clair"}
+];
+async function loadUSACE(){
+  const el = document.getElementById("usace");
+  try{
+    const end = new Date(), begin = new Date(end.getTime()-12*3600*1000);
+    const data = await Promise.all(USACE_GAUGES.map(async g=>{
+      try{
+        const u = `https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRE&name=${encodeURIComponent(g.tsid)}&begin=${begin.toISOString()}&end=${end.toISOString()}&page-size=500`;
+        const j = await (await fetch(u,{headers:{"Accept":"application/json;version=2"}})).json();
+        const vals = (j.values||[]).filter(v=>v[1]!=null);
+        if(!vals.length) return {g, v:null};
+        const last = vals[vals.length-1];
+        const prev = vals.length>3 ? vals[vals.length-4] : vals[0];
+        return {g, v:last[1], t:last[0], prev:prev[1], unit:j.units||"ft"};
+      }catch(e){ return {g, v:null}; }
+    }));
+    const got = data.filter(d=>d.v!=null);
+    if(!got.length){ el.innerHTML = `<div class="err">USACE gauge data unavailable. <a href="https://www.lre.usace.army.mil/Missions/Great-Lakes-Information/" target="_blank" rel="noopener">USACE Detroit District &#8599;</a></div>`; return; }
+    const stages = got.map(d=>d.v);
+    const mn = Math.min(...stages), mx = Math.max(...stages), span = (mx-mn)||1;
+    const head = data[0].v, mouth = data[data.length-1].v;
+    const fall = (head!=null && mouth!=null) ? (head-mouth) : null;
+    let rows = data.map(d=>{
+      if(d.v==null) return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"></div><div class="sg-val sg-muted muted">no data</div></div>`;
+      const w = 22 + Math.round((d.v-mn)/span*78);
+      let arr="&rarr;", cls="trend-flat";
+      if(d.prev!=null){ const dl=d.v-d.prev; if(dl>0.03){arr="&uarr;";cls="trend-up";} else if(dl<-0.03){arr="&darr;";cls="trend-dn";} }
+      return `<div class="stage-row">
+        <div class="sg-name">${d.g.name}<small>${d.g.note}</small></div>
+        <div class="sg-bar"><span style="width:${w}%"></span></div>
+        <div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div>
+      </div>`;
+    }).join("");
+    const fallTxt = fall!=null ? `<div class="fall-note">Head-to-mouth fall (Fort Gratiot &rarr; Algonac): <b>${fall.toFixed(2)} ft</b> &middot; IGLD 1985 datum &middot; values from USACE Detroit District (LRE), sourced from the NOAA/USACE connecting-channel gauge network.</div>` : "";
+    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &uarr; rising &middot; &darr; falling over last ~3 hr. <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
+    stamp("upd-usace");
+  }catch(e){ el.innerHTML = `<div class="err">USACE feed error (${e.message}).</div>`; }
+}
+
+/* ===================== Marine Weather ===================== */
+const MARINE_ZONES = "LHZ443,LHZ464,LCZ422,LCZ460"; // Lk Huron nearshore+offshore @ Port Huron, St. Clair River, Lk St. Clair
+async function loadMarine(){
+  const el = document.getElementById("marine");
+  try{
+    let html = "";
+    // Active marine warnings/advisories
+    const al = await getJSON(`https://api.weather.gov/alerts/active?zone=${MARINE_ZONES}`, UA_HEADERS);
+    const feats = (al.features||[]).map(f=>f.properties);
+    if(feats.length){
+      html += feats.map(p=>{
+        const sev=p.severity||"Unknown";
+        return `<div class="alert sev-${sev}" style="margin-bottom:8px;"><div class="a-top"><span class="a-event">${p.event} <span class="badge b-${sev}">${sev}</span></span><span class="a-time">until ${fmtTime(p.expires||p.ends)}</span></div><div class="a-head">${(p.areaDesc||"").replace(/</g,"&lt;")}</div></div>`;
+      }).join("");
+    } else {
+      html += `<div class="all-clear" style="font-size:13px; margin-bottom:8px;"><span class="ring" style="width:20px;height:20px;border-width:2px;">&#10003;</span> No active marine warnings or advisories.</div>`;
+    }
+    // Nearshore marine forecast (Lake Huron, Port Sanilac to Port Huron)
+    try{
+      const list = await getJSON(`https://api.weather.gov/products/types/NSH/locations/DTX`, {Accept:"application/ld+json"});
+      if(list["@graph"] && list["@graph"].length){
+        const prod = await getJSON(list["@graph"][0]["@id"], {Accept:"application/ld+json"});
+        const seg = (prod.productText||"").split("$$").find(s=>/LHZ443/.test(s))||"";
+        const periods=[]; const re=/\.([A-Z][A-Z .]+?)\.\.\.([\s\S]*?)(?=\n\.[A-Z]|\nSee |$)/g; let m;
+        while((m=re.exec(seg))!==null){ periods.push({n:m[1].trim(), t:m[2].replace(/\s+/g," ").trim()}); }
+        if(periods.length){
+          html += `<div class="small muted" style="margin:4px 0 6px;">NWS Nearshore Forecast &mdash; Lake Huron, Port Sanilac to Port Huron:</div>`;
+          html += periods.slice(0,4).map(p=>`<div class="mar-period"><div class="mp-n">${p.n}</div><div class="mp-t">${p.t}</div></div>`).join("");
+        }
+      }
+    }catch(e){}
+    html += `<div class="small muted" style="margin-top:8px;">Waters: Lake Huron (Port Huron), St. Clair River, Lake St. Clair. <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">Full marine forecast &#8599;</a></div>`;
+    el.innerHTML = html;
+    stamp("upd-marine");
+  }catch(e){ el.innerHTML = `<div class="err">Marine data unavailable (${e.message}). <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">NWS marine &#8599;</a></div>`; }
+}
+
 /* ===================== ESF Status Board ===================== */
 const ESF = [
   ["ESF-1","Transportation","s-green"],["ESF-2","Communications","s-green"],
@@ -518,7 +626,7 @@ function bustRadar(){ document.getElementById("radar").src = "https://radar.weat
 
 /* ===================== Orchestration ===================== */
 function refreshAll(){
-  loadAlerts(); loadConditions(); loadForecast(); loadHWO(); loadWater(); loadQuakes(); bustRadar();
+  loadAlerts(); loadConditions(); loadForecast(); loadHWO(); loadWater(); loadUSACE(); loadMarine(); loadQuakes(); bustRadar();
   document.getElementById("last-refresh").textContent =
     new Date().toLocaleTimeString("en-US",{timeZone:"America/Detroit"}) + " ET";
 }
