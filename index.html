@@ -59,6 +59,10 @@
     letter-spacing:.4px; font-size:12px;
   }
   .activation .note{color:var(--muted); font-weight:500;}
+  .activation.amber{ background:#2a2310; border-bottom-color:#7a5a16; }
+  .activation.amber .lvl{ background:var(--warn); color:#3a2800; }
+  .activation.red{ background:#2a1212; border-bottom-color:#7a1f1f; }
+  .activation.red .lvl{ background:var(--sev); color:#350000; }
 
   /* Layout */
   .wrap{max-width:1500px; margin:0 auto; padding:18px;}
@@ -194,10 +198,10 @@
 </header>
 
 <!-- EOC Activation banner: edit the level/note below to reflect current posture -->
-<div class="activation" id="activation">
-  <span class="lvl" id="act-lvl">MONITORING</span>
-  <span>EOC Activation Level &mdash; <b id="act-state">Steady State / Daily Operations</b></span>
-  <span class="note" id="act-note">No active countywide incident. Dashboard auto-refreshes live feeds every 5 minutes.</span>
+<div class="activation amber" id="activation">
+  <span class="lvl" id="act-lvl">ENHANCED MONITORING</span>
+  <span>EOC Activation Level &mdash; <b id="act-state">Heat Event Watch</b></span>
+  <span class="note" id="act-note">Active Extreme Heat Warning in effect. EOC monitoring conditions; cooling-center &amp; public-health posture elevated. Dashboard auto-refreshes every 5 minutes.</span>
 </div>
 
 <div class="wrap">
@@ -253,7 +257,7 @@
       <h2><span>Response &amp; Recovery &mdash; ESF Status Board</span></h2>
       <div class="body">
         <div class="esf" id="esf"></div>
-        <div class="small muted" style="margin-top:10px;">ESF readiness is set by EOC staff in the dashboard source. Defaults reflect steady-state posture.</div>
+        <div class="small muted" style="margin-top:10px;">ESF readiness is set by EOC staff in the dashboard source. <span style="color:var(--warn);">Elevated</span> ESFs reflect the active heat event (cooling centers, public health, messaging).</div>
       </div>
     </section>
 
@@ -285,9 +289,11 @@ const WFO = "DTX";                         // Detroit/Pontiac
 const UA_HEADERS = { "Accept":"application/geo+json", "User-Agent":"SCC-EOC-Dashboard (stclaircounty.org)" };
 const USGS_SITES = [
   {id:"04159130", name:"St. Clair River at Port Huron"},
-  {id:"04160075", name:"Black River at Port Huron"},
-  {id:"04160050", name:"Black River near Port Huron"},
-  {id:"04160600", name:"Mill Creek near Avoca"}
+  {id:"04160421", name:"St. Clair River DS Pine River at St. Clair"},
+  {id:"04160600", name:"Belle River at Memphis"},
+  {id:"04160595", name:"Belle River near Memphis"},
+  {id:"04160615", name:"Belle River at Richmond (US-25)"},
+  {id:"04160050", name:"Black River near Port Huron"}
 ];
 const NOAA_WL_STATION = "9014090"; // Mouth of Black River (Great Lakes water level)
 
@@ -475,14 +481,14 @@ async function loadQuakes(){
 const ESF = [
   ["ESF-1","Transportation","s-green"],["ESF-2","Communications","s-green"],
   ["ESF-3","Public Works","s-green"],["ESF-4","Firefighting","s-green"],
-  ["ESF-5","Info &amp; Planning","s-green"],["ESF-6","Mass Care/Shelter","s-green"],
-  ["ESF-7","Logistics","s-green"],["ESF-8","Public Health/Medical","s-green"],
+  ["ESF-5","Info &amp; Planning","s-green"],["ESF-6","Mass Care/Shelter","s-amber"],
+  ["ESF-7","Logistics","s-green"],["ESF-8","Public Health/Medical","s-amber"],
   ["ESF-9","Search &amp; Rescue","s-green"],["ESF-10","HazMat","s-green"],
-  ["ESF-13","Public Safety","s-green"],["ESF-15","External Affairs","s-green"]
+  ["ESF-13","Public Safety","s-green"],["ESF-15","External Affairs","s-amber"]
 ];
 function renderESF(){
   document.getElementById("esf").innerHTML = ESF.map(([n,t,s])=>{
-    const label = s==="s-green"?"Ready":s==="s-amber"?"Monitoring":"Activated";
+    const label = s==="s-green"?"Ready":s==="s-amber"?"Elevated":"Activated";
     return `<div class="esf-item"><div class="e-n">${n}</div><div class="e-t">${t}</div><span class="status-pill ${s}">${label}</span></div>`;
   }).join("");
 }
