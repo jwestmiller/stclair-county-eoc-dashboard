@@ -114,6 +114,8 @@
   .b-Moderate{background:var(--high); color:#3a1500;}
   .b-Minor{background:var(--warn); color:#3a2800;}
   .b-Unknown{background:var(--muted); color:#10151f;}
+  .b-Marine{background:#1d6fd0; color:#fff;}
+  .alert.marine{border-left-style:double; border-left-width:6px;}
   .all-clear{display:flex; align-items:center; gap:10px; color:var(--ok); font-weight:600; font-size:15px;}
   .all-clear .ring{width:26px;height:26px;border-radius:50%;border:3px solid var(--ok); display:flex;align-items:center;justify-content:center;}
 
@@ -344,20 +346,23 @@ const SEV_ORDER = {Extreme:0,Severe:1,Moderate:2,Minor:3,Unknown:4};
 async function loadAlerts(){
   const el = document.getElementById("alerts");
   try{
-    const d = await getJSON(`https://api.weather.gov/alerts/active?zone=${ZONES}`, UA_HEADERS);
+    const d = await getJSON(`https://api.weather.gov/alerts/active?zone=${ZONES},${MARINE_ZONES}`, UA_HEADERS);
     let feats = (d.features||[]).map(f=>f.properties);
     // de-dupe by event+area
     const seen=new Set(); feats=feats.filter(p=>{const k=p.event+"|"+(p.areaDesc||"");if(seen.has(k))return false;seen.add(k);return true;});
     feats.sort((a,b)=>(SEV_ORDER[a.severity]??9)-(SEV_ORDER[b.severity]??9));
     if(!feats.length){
-      el.innerHTML = `<div class="all-clear"><span class="ring">&#10003;</span> No active NWS warnings, watches, or advisories for St. Clair County.</div>
-        <div class="small muted" style="margin-top:8px;">Monitoring forecast zone MIZ063 &amp; county zone MIC147.</div>`;
+      el.innerHTML = `<div class="all-clear"><span class="ring">&#10003;</span> No active NWS warnings, watches, or advisories for St. Clair County or adjacent waters.</div>
+        <div class="small muted" style="margin-top:8px;">Monitoring land zones MIZ063 &amp; MIC147 and marine zones for Lake Huron, the St. Clair River, and Lake St. Clair.</div>`;
     } else {
       el.innerHTML = feats.map(p=>{
         const sev = p.severity||"Unknown";
-        return `<div class="alert sev-${sev}">
+        const ugc = (p.geocode && p.geocode.UGC) || [];
+        const isMarine = ugc.some(u=>/^L[A-Z]Z/.test(u));
+        const marineTag = isMarine ? ` <span class="badge b-Marine">&#9875; Marine</span>` : "";
+        return `<div class="alert sev-${sev}${isMarine?' marine':''}">
           <div class="a-top">
-            <span class="a-event">${p.event||"Alert"} <span class="badge b-${sev}">${sev}</span></span>
+            <span class="a-event">${p.event||"Alert"} <span class="badge b-${sev}">${sev}</span>${marineTag}</span>
             <span class="a-time">until ${fmtTime(p.expires||p.ends)}</span>
           </div>
           <div class="a-head">${(p.headline||p.areaDesc||"").replace(/</g,"&lt;")}</div>
