@@ -17,6 +17,20 @@ The dashboard pulls live, keyless public data directly in the browser and auto-r
 - **Response & Recovery ESF status board** — Emergency Support Function readiness (set by EOC staff in the page source).
 - **All-hazards quick links** — traffic/closures, power outages, flood forecasts, public health, state/federal EM, shelters, and more.
 
+## Situational-awareness & usability features
+
+- **Top status strip** — EOC posture, active-warning count, highest severity, and the single top priority right now.
+- **Situational map** (Leaflet) — county, river/lake gauges, and NWS warning areas.
+- **Flood-stage context** — river gauges show category ("action / minor / moderate / major") and distance to the next stage, once thresholds are set in Settings. 72-hour trend sparklines included.
+- **Heat-index context** — current heat index flagged against Caution / Advisory / Warning ranges.
+- **Feed-health row** — per-source green/red status so a down feed is obvious vs. a true "all clear."
+- **New-warning alerting** — new alerts flash, get a "New" badge, and optionally chime.
+- **Editable ESF board** — click a pill to cycle Ready → Elevated → Activated. No login; saved in the browser.
+- **Settings drawer** — activation banner, flood thresholds, reload interval, chime, and wake-lock, all password-free.
+- **Kiosk/display mode + light/print theme.**
+- **Generate SITREP** — one click builds a printable daily situation report from the live data.
+- **Unattended operation** — 5-min feed refresh, periodic full reload, 20-min watchdog self-heal, offline detection, and screen wake-lock. See `SETUP-UNATTENDED.md`.
+
 ## Data sources
 
 - [National Weather Service API](https://www.weather.gov/documentation/services-web-api)

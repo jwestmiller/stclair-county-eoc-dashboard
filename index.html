@@ -5,352 +5,536 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>St. Clair County EOC — All-Hazards Situational Awareness Dashboard</title>
 <meta name="description" content="Live all-hazards, weather, response and recovery situational awareness dashboard for the St. Clair County, Michigan Emergency Operations Center." />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  :root{
-    --bg:#0c1018; --panel:#141b29; --panel2:#1b2435; --line:#26324a;
-    --text:#e6edf7; --muted:#93a2bd; --accent:#3da5ff; --accent2:#1d6fd0;
-    --ok:#37c871; --warn:#ffb020; --high:#ff7a3d; --sev:#ff4d4d; --ext:#c026d3;
-    --shadow:0 4px 16px rgba(0,0,0,.35);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg); color:var(--text);
-    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.45; -webkit-font-smoothing:antialiased;
-  }
-  a{color:var(--accent); text-decoration:none;}
-  a:hover{text-decoration:underline;}
+:root{
+--bg:#0c1018; --panel:#141b29; --panel2:#1b2435; --line:#26324a;
+--text:#e6edf7; --muted:#93a2bd; --accent:#3da5ff; --accent2:#1d6fd0;
+/* Colorblind-safe status set (blue/orange/magenta instead of red/green only) */
+--ok:#2bb0e6; --warn:#ffb020; --high:#ff7a3d; --sev:#ff4d4d; --ext:#c026d3;
+--rise:#ff9e42; --fall:#2bb0e6;
+--shadow:0 4px 16px rgba(0,0,0,.35);
+}
+/* Light / print theme */
+body.light{
+--bg:#eef2f8; --panel:#ffffff; --panel2:#f2f6fc; --line:#c9d5e6;
+--text:#111a29; --muted:#4d5d78; --accent:#1560b8; --accent2:#1560b8;
+--shadow:0 2px 8px rgba(30,50,90,.12);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+background:var(--bg); color:var(--text);
+font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent); text-decoration:none;}
+a:hover{text-decoration:underline;}
 
-  /* Header */
-  header{
-    background:linear-gradient(180deg,#101725,#0c1018);
-    border-bottom:1px solid var(--line);
-    padding:14px 20px; position:sticky; top:0; z-index:50;
-  }
-  .hdr-row{display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between;}
-  .brand{display:flex; align-items:center; gap:14px;}
-  .seal{
-    width:46px; height:46px; border-radius:50%; flex:0 0 auto;
-    background:radial-gradient(circle at 35% 30%,#2b6fd0,#143a78);
-    border:2px solid #5b8ddb; display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:13px; letter-spacing:.5px; color:#fff;
-  }
-  .brand h1{font-size:18px; margin:0; line-height:1.15;}
-  .brand .sub{font-size:12px; color:var(--muted); margin-top:2px;}
-  .hdr-right{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
-  .clock{text-align:right; font-variant-numeric:tabular-nums;}
-  .clock .t{font-size:18px; font-weight:700;}
-  .clock .d{font-size:11px; color:var(--muted);}
-  .refresh-btn{
-    background:var(--panel2); color:var(--text); border:1px solid var(--line);
-    border-radius:8px; padding:8px 12px; cursor:pointer; font-size:12px; font-weight:600;
-  }
-  .refresh-btn:hover{border-color:var(--accent);}
+/* Header */
+header{
+background:linear-gradient(180deg,#101725,#0c1018);
+border-bottom:1px solid var(--line);
+padding:12px 20px; position:sticky; top:0; z-index:400;
+}
+body.light header{background:linear-gradient(180deg,#ffffff,#eef2f8);}
+.hdr-row{display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between;}
+.brand{display:flex; align-items:center; gap:14px;}
+.seal{
+width:46px; height:46px; border-radius:50%; flex:0 0 auto;
+background:radial-gradient(circle at 35% 30%,#2b6fd0,#143a78);
+border:2px solid #5b8ddb; display:flex; align-items:center; justify-content:center;
+font-weight:800; font-size:13px; letter-spacing:.5px; color:#fff; text-align:center; line-height:1;
+}
+.brand h1{font-size:18px; margin:0; line-height:1.15;}
+.brand .sub{font-size:12px; color:var(--muted); margin-top:2px;}
+.hdr-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.clock{text-align:right; font-variant-numeric:tabular-nums; margin-right:4px;}
+.clock .t{font-size:18px; font-weight:700;}
+.clock .d{font-size:11px; color:var(--muted);}
+.btn{
+background:var(--panel2); color:var(--text); border:1px solid var(--line);
+border-radius:8px; padding:8px 11px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent);}
+.btn.on{border-color:var(--accent); background:var(--accent2); color:#fff;}
 
-  /* Activation banner */
-  .activation{
-    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    padding:9px 20px; font-size:13px; font-weight:600;
-    background:#13251a; border-bottom:1px solid #1f6b40;
-  }
-  .activation .lvl{
-    background:var(--ok); color:#06210f; padding:3px 10px; border-radius:20px; font-weight:800;
-    letter-spacing:.4px; font-size:12px;
-  }
-  .activation .note{color:var(--muted); font-weight:500;}
-  .activation.amber{ background:#2a2310; border-bottom-color:#7a5a16; }
-  .activation.amber .lvl{ background:var(--warn); color:#3a2800; }
-  .activation.red{ background:#2a1212; border-bottom-color:#7a1f1f; }
-  .activation.red .lvl{ background:var(--sev); color:#350000; }
+/* Top status strip */
+.statusstrip{
+display:flex; align-items:stretch; gap:0; flex-wrap:wrap;
+background:#0e1524; border-bottom:1px solid var(--line);
+}
+body.light .statusstrip{background:#e3ebf6;}
+.ss-cell{padding:8px 18px; border-right:1px solid var(--line); display:flex; flex-direction:column; justify-content:center; min-width:120px;}
+.ss-cell .k{font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700;}
+.ss-cell .v{font-size:17px; font-weight:800; line-height:1.2;}
+.ss-cell.big{flex:1; min-width:240px;}
+.ss-cell.big .v{font-size:15px; font-weight:600;}
+.ss-posture .v{padding:2px 10px; border-radius:20px; display:inline-block; font-size:13px;}
+.p-normal{background:var(--ok); color:#032430;}
+.p-enhanced{background:var(--warn); color:#3a2800;}
+.p-partial{background:var(--high); color:#3a1500;}
+.p-full{background:var(--sev); color:#350000;}
+.ss-worst .v.wNone{color:var(--ok);} .ss-worst .v.wMinor{color:var(--warn);}
+.ss-worst .v.wModerate{color:var(--high);} .ss-worst .v.wSevere{color:var(--sev);} .ss-worst .v.wExtreme{color:var(--ext);}
 
-  /* Layout */
-  .wrap{max-width:1500px; margin:0 auto; padding:18px;}
-  .grid{
-    display:grid; gap:16px;
-    grid-template-columns:repeat(12,1fr);
-  }
-  .card{
-    background:var(--panel); border:1px solid var(--line); border-radius:12px;
-    box-shadow:var(--shadow); display:flex; flex-direction:column; min-height:120px; overflow:hidden;
-  }
-  .card h2{
-    margin:0; padding:12px 14px; font-size:13px; letter-spacing:.5px; text-transform:uppercase;
-    color:var(--muted); border-bottom:1px solid var(--line);
-    display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--panel2);
-  }
-  .card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
-  .card h2 .dot.live{background:var(--ok); box-shadow:0 0 0 0 rgba(55,200,113,.6); animation:pulse 2.4s infinite;}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(55,200,113,.5);}70%{box-shadow:0 0 0 7px rgba(55,200,113,0);}100%{box-shadow:0 0 0 0 rgba(55,200,113,0);}}
-  .card .body{padding:14px; overflow:auto; flex:1;}
+/* Feed health row */
+.feedhealth{display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:7px 18px; background:var(--panel); border-bottom:1px solid var(--line); font-size:11px;}
+.feedhealth .fh-lbl{color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-right:2px;}
+.fh{display:flex; align-items:center; gap:5px; background:var(--panel2); border:1px solid var(--line); border-radius:20px; padding:3px 9px;}
+.fh .d{width:8px; height:8px; border-radius:50%; background:var(--muted);}
+.fh.ok .d{background:var(--ok);} .fh.down .d{background:var(--sev);} .fh.wait .d{background:var(--warn);}
+.fh .nm{font-weight:600;} .fh .tm{color:var(--muted);}
 
-  /* spans */
-  .col-12{grid-column:span 12;}
-  .col-8{grid-column:span 8;}
-  .col-6{grid-column:span 6;}
-  .col-4{grid-column:span 4;}
-  .col-5{grid-column:span 5;}
-  .col-7{grid-column:span 7;}
-  @media(max-width:1100px){
-    .col-8,.col-6,.col-4,.col-5,.col-7{grid-column:span 12;}
-  }
+/* Activation banner */
+.activation{
+display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+padding:9px 20px; font-size:13px; font-weight:600;
+background:#13251a; border-bottom:1px solid #1f6b40;
+}
+.activation .lvl{background:var(--ok); color:#032430; padding:3px 10px; border-radius:20px; font-weight:800; letter-spacing:.4px; font-size:12px;}
+.activation .note{color:var(--muted); font-weight:500;}
+.activation.amber{ background:#2a2310; border-bottom-color:#7a5a16; }
+.activation.amber .lvl{ background:var(--warn); color:#3a2800; }
+.activation.orange{ background:#2a1c10; border-bottom-color:#7a4416; }
+.activation.orange .lvl{ background:var(--high); color:#3a1500; }
+.activation.red{ background:#2a1212; border-bottom-color:#7a1f1f; }
+.activation.red .lvl{ background:var(--sev); color:#350000; }
 
-  /* Alerts */
-  .alert{
-    border-left:5px solid var(--muted); background:var(--panel2);
-    border-radius:8px; padding:10px 12px; margin-bottom:10px;
-  }
-  .alert .a-top{display:flex; justify-content:space-between; gap:10px; align-items:baseline; flex-wrap:wrap;}
-  .alert .a-event{font-weight:700; font-size:14px;}
-  .alert .a-time{font-size:11px; color:var(--muted); white-space:nowrap;}
-  .alert .a-head{font-size:12px; color:#cdd8ec; margin-top:4px;}
-  .alert.sev-Extreme{border-color:var(--ext);}
-  .alert.sev-Severe{border-color:var(--sev);}
-  .alert.sev-Moderate{border-color:var(--high);}
-  .alert.sev-Minor{border-color:var(--warn);}
-  .badge{display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:.4px;}
-  .b-Extreme{background:var(--ext); color:#fff;}
-  .b-Severe{background:var(--sev); color:#350000;}
-  .b-Moderate{background:var(--high); color:#3a1500;}
-  .b-Minor{background:var(--warn); color:#3a2800;}
-  .b-Unknown{background:var(--muted); color:#10151f;}
-  .b-Marine{background:#1d6fd0; color:#fff;}
-  .alert.marine{border-left-style:double; border-left-width:6px;}
-  .all-clear{display:flex; align-items:center; gap:10px; color:var(--ok); font-weight:600; font-size:15px;}
-  .all-clear .ring{width:26px;height:26px;border-radius:50%;border:3px solid var(--ok); display:flex;align-items:center;justify-content:center;}
+/* Offline banner */
+.offline{display:none; padding:8px 20px; background:var(--sev); color:#350000; font-weight:800; font-size:13px; text-align:center;}
+body.is-offline .offline{display:block;}
 
-  /* Forecast */
-  .now{display:flex; align-items:center; gap:16px; margin-bottom:12px; flex-wrap:wrap;}
-  .now .temp{font-size:40px; font-weight:800; line-height:1;}
-  .now .meta{font-size:12px; color:var(--muted);}
-  .now .meta b{color:var(--text); font-weight:600;}
-  .fc-row{display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
-  .fc{
-    flex:0 0 auto; width:148px; background:var(--panel2); border:1px solid var(--line);
-    border-radius:8px; padding:12px 11px; text-align:center;
-  }
-  .fc .nm{font-size:14px; font-weight:700; color:var(--accent); height:40px; overflow:hidden;}
-  .fc .tm{font-size:30px; font-weight:800; margin:6px 0;}
-  .fc .ds{font-size:13px; color:#c4d1e6; line-height:1.35; min-height:70px; overflow:hidden;}
-  .fc .wind{font-size:12px; color:#9fb3d4; margin-top:6px;}
+/* Layout */
+.wrap{max-width:1500px; margin:0 auto; padding:18px;}
+.grid{display:grid; gap:16px; grid-template-columns:repeat(12,1fr);}
+.card{
+background:var(--panel); border:1px solid var(--line); border-radius:12px;
+box-shadow:var(--shadow); display:flex; flex-direction:column; min-height:120px; overflow:hidden;
+}
+.card h2{
+margin:0; padding:12px 14px; font-size:13px; letter-spacing:.5px; text-transform:uppercase;
+color:var(--muted); border-bottom:1px solid var(--line);
+display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--panel2);
+}
+.card h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.card h2 .dot.live{background:var(--ok); box-shadow:0 0 0 0 rgba(43,176,230,.6); animation:pulse 2.4s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(43,176,230,.5);}70%{box-shadow:0 0 0 7px rgba(43,176,230,0);}100%{box-shadow:0 0 0 0 rgba(43,176,230,0);}}
+.card.flash{animation:flash 1s ease-in-out 4;}
+@keyframes flash{0%,100%{box-shadow:var(--shadow);}50%{box-shadow:0 0 0 3px var(--sev);}}
+.card .body{padding:14px; overflow:auto; flex:1;}
 
-  /* Tables / lists */
-  table{width:100%; border-collapse:collapse; font-size:13px;}
-  th,td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);}
-  th{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:600;}
-  td.num{text-align:right; font-variant-numeric:tabular-nums;}
-  .trend-up{color:var(--high);} .trend-dn{color:var(--ok);} .trend-flat{color:var(--muted);}
+.col-12{grid-column:span 12;} .col-8{grid-column:span 8;} .col-6{grid-column:span 6;}
+.col-4{grid-column:span 4;} .col-5{grid-column:span 5;} .col-7{grid-column:span 7;}
+@media(max-width:1100px){ .col-8,.col-6,.col-4,.col-5,.col-7{grid-column:span 12;} }
 
-  .quake{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line);}
-  .mag{flex:0 0 auto; width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:#0c1018; background:var(--warn);}
-  .mag.m2{background:#ffd24d;} .mag.m3{background:var(--high);color:#fff;} .mag.m4{background:var(--sev);color:#fff;} .mag.m5{background:var(--ext);color:#fff;}
-  .quake .q-place{font-size:13px; font-weight:600;} .quake .q-meta{font-size:11px; color:var(--muted);}
+/* Alerts */
+.alert{border-left:5px solid var(--muted); background:var(--panel2); border-radius:8px; padding:10px 12px; margin-bottom:10px;}
+.alert.new{outline:2px solid var(--sev); outline-offset:1px;}
+.alert .a-top{display:flex; justify-content:space-between; gap:10px; align-items:baseline; flex-wrap:wrap;}
+.alert .a-event{font-weight:700; font-size:14px;}
+.alert .a-time{font-size:11px; color:var(--muted); white-space:nowrap;}
+.alert .a-head{font-size:12px; color:var(--text); opacity:.85; margin-top:4px;}
+.alert.sev-Extreme{border-color:var(--ext);} .alert.sev-Severe{border-color:var(--sev);}
+.alert.sev-Moderate{border-color:var(--high);} .alert.sev-Minor{border-color:var(--warn);}
+.badge{display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:.4px;}
+.b-Extreme{background:var(--ext); color:#fff;} .b-Severe{background:var(--sev); color:#350000;}
+.b-Moderate{background:var(--high); color:#3a1500;} .b-Minor{background:var(--warn); color:#3a2800;}
+.b-Unknown{background:var(--muted); color:#10151f;} .b-Marine{background:#1d6fd0; color:#fff;} .b-New{background:var(--sev); color:#fff;}
+.alert.marine{border-left-style:double; border-left-width:6px;}
+.all-clear{display:flex; align-items:center; gap:10px; color:var(--ok); font-weight:600; font-size:15px;}
+.all-clear .ring{width:26px;height:26px;border-radius:50%;border:3px solid var(--ok); display:flex;align-items:center;justify-content:center;}
 
-  /* Resource links */
-  .links{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px;}
-  .lnk{
-    display:flex; flex-direction:column; gap:3px; padding:11px 12px; border-radius:9px;
-    background:var(--panel2); border:1px solid var(--line);
-  }
-  .lnk:hover{border-color:var(--accent); text-decoration:none;}
-  .lnk .lt{font-weight:700; font-size:13px; color:var(--text);}
-  .lnk .ld{font-size:11px; color:var(--muted);}
-  .lnk .cat{font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent); font-weight:700;}
+/* Forecast */
+.now{display:flex; align-items:center; gap:16px; margin-bottom:12px; flex-wrap:wrap;}
+.now .temp{font-size:40px; font-weight:800; line-height:1;}
+.now .meta{font-size:12px; color:var(--muted);}
+.now .meta b{color:var(--text); font-weight:600;}
+.heatpill{display:inline-block; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; margin-top:4px;}
+.hp-none{background:var(--panel2); color:var(--muted); border:1px solid var(--line);}
+.hp-caution{background:rgba(255,176,32,.16); color:var(--warn); border:1px solid rgba(255,176,32,.4);}
+.hp-advisory{background:rgba(255,122,61,.16); color:var(--high); border:1px solid rgba(255,122,61,.5);}
+.hp-warning{background:rgba(255,77,77,.18); color:var(--sev); border:1px solid rgba(255,77,77,.5);}
+.fc-row{display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
+.fc{flex:0 0 auto; width:148px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:12px 11px; text-align:center;}
+.fc .nm{font-size:14px; font-weight:700; color:var(--accent); height:40px; overflow:hidden;}
+.fc .tm{font-size:30px; font-weight:800; margin:6px 0;}
+.fc .ds{font-size:13px; color:var(--text); opacity:.85; line-height:1.35; min-height:70px; overflow:hidden;}
+.fc .wind{font-size:12px; color:var(--muted); margin-top:6px;}
 
-  /* Response/Recovery status board */
-  .esf{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:9px;}
-  .esf-item{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px;}
-  .esf-item .e-n{font-size:11px; color:var(--muted);}
-  .esf-item .e-t{font-size:13px; font-weight:600; margin:2px 0 5px;}
-  .status-pill{font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; text-transform:uppercase; letter-spacing:.4px;}
-  .s-green{background:rgba(55,200,113,.18); color:var(--ok); border:1px solid rgba(55,200,113,.4);}
-  .s-amber{background:rgba(255,176,32,.16); color:var(--warn); border:1px solid rgba(255,176,32,.4);}
-  .s-red{background:rgba(255,77,77,.16); color:var(--sev); border:1px solid rgba(255,77,77,.4);}
+/* Tables / lists */
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th,td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);}
+th{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:600;}
+td.num{text-align:right; font-variant-numeric:tabular-nums;}
+.trend-up{color:var(--rise);} .trend-dn{color:var(--fall);} .trend-flat{color:var(--muted);}
+.spark{display:block;}
+/* Flood-stage context */
+.fstage{font-size:11px; font-weight:700; margin-top:2px;}
+.fs-normal{color:var(--ok);} .fs-action{color:var(--warn);} .fs-minor{color:var(--high);}
+.fs-moderate{color:var(--sev);} .fs-major{color:var(--ext);} .fs-none{color:var(--muted);}
 
-  /* USACE stage profile */
-  .stage-row{display:grid; grid-template-columns:1.6fr 2.2fr auto; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line);}
-  .stage-row .sg-name{font-size:13px; font-weight:600;}
-  .stage-row .sg-name small{display:block; color:var(--muted); font-weight:400; font-size:10px;}
-  .sg-bar{height:14px; background:#0e1623; border:1px solid var(--line); border-radius:7px; overflow:hidden; position:relative;}
-  .sg-bar > span{display:block; height:100%; background:linear-gradient(90deg,#1d6fd0,#3da5ff); border-radius:7px;}
-  .stage-row .sg-val{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap;}
-  .stage-row .sg-val small{color:var(--muted); font-weight:600; font-size:11px;}
-  .fall-note{font-size:12px; color:#c4d1e6; margin:2px 0 10px; padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:8px;}
-  .fall-note b{color:var(--accent);}
-  /* Marine */
-  .mar-period{padding:7px 0; border-bottom:1px solid var(--line);}
-  .mar-period .mp-n{font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.3px;}
-  .mar-period .mp-t{font-size:12px; color:#cdd8ec; margin-top:2px;}
-  .loading{color:var(--muted); font-size:13px; padding:6px 0;}
-  .err{color:var(--warn); font-size:12px;}
-  .upd{font-size:10px; color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0;}
-  .radar-img{width:100%; border-radius:8px; border:1px solid var(--line); display:block;}
-  .muted{color:var(--muted);}
-  .small{font-size:11px;}
+.quake{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line);}
+.mag{flex:0 0 auto; width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:#0c1018; background:var(--warn);}
+.mag.m2{background:#ffd24d;} .mag.m3{background:var(--high);color:#fff;} .mag.m4{background:var(--sev);color:#fff;} .mag.m5{background:var(--ext);color:#fff;}
+.quake .q-place{font-size:13px; font-weight:600;} .quake .q-meta{font-size:11px; color:var(--muted);}
 
-  footer{padding:20px; text-align:center; color:var(--muted); font-size:11px; border-top:1px solid var(--line); margin-top:20px;}
-  footer a{color:var(--muted); text-decoration:underline;}
+/* Map */
+#map{width:100%; height:340px; border-radius:8px; overflow:hidden; border:1px solid var(--line);}
+.leaflet-container{background:#0e1623;}
+
+/* Resource links */
+.links{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px;}
+.lnk{display:flex; flex-direction:column; gap:3px; padding:11px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--line);}
+.lnk:hover{border-color:var(--accent); text-decoration:none;}
+.lnk .lt{font-weight:700; font-size:13px; color:var(--text);}
+.lnk .ld{font-size:11px; color:var(--muted);}
+.lnk .cat{font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent); font-weight:700;}
+
+/* ESF status board (click to cycle) */
+.esf{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:9px;}
+.esf-item{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px;}
+.esf-item .e-n{font-size:11px; color:var(--muted);}
+.esf-item .e-t{font-size:13px; font-weight:600; margin:2px 0 5px;}
+.status-pill{font-size:10px; font-weight:800; padding:3px 9px; border-radius:10px; text-transform:uppercase; letter-spacing:.4px; cursor:pointer; border:1px solid transparent; user-select:none;}
+.status-pill:hover{filter:brightness(1.15);}
+.s-green{background:rgba(43,176,230,.18); color:var(--ok); border-color:rgba(43,176,230,.4);}
+.s-amber{background:rgba(255,176,32,.16); color:var(--warn); border-color:rgba(255,176,32,.4);}
+.s-red{background:rgba(255,77,77,.16); color:var(--sev); border-color:rgba(255,77,77,.4);}
+
+/* USACE stage profile */
+.stage-row{display:grid; grid-template-columns:1.6fr 2.2fr auto; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line);}
+.stage-row .sg-name{font-size:13px; font-weight:600;}
+.stage-row .sg-name small{display:block; color:var(--muted); font-weight:400; font-size:10px;}
+.sg-bar{height:14px; background:#0e1623; border:1px solid var(--line); border-radius:7px; overflow:hidden; position:relative;}
+.sg-bar > span{display:block; height:100%; background:linear-gradient(90deg,#1d6fd0,#3da5ff); border-radius:7px;}
+.stage-row .sg-val{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap;}
+.stage-row .sg-val small{color:var(--muted); font-weight:600; font-size:11px;}
+.fall-note{font-size:12px; color:var(--text); opacity:.85; margin:2px 0 10px; padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:8px;}
+.fall-note b{color:var(--accent);}
+
+/* Marine */
+.mar-period{padding:7px 0; border-bottom:1px solid var(--line);}
+.mar-period .mp-n{font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.3px;}
+.mar-period .mp-t{font-size:12px; color:var(--text); opacity:.85; margin-top:2px;}
+.loading{color:var(--muted); font-size:13px; padding:6px 0;}
+.err{color:var(--warn); font-size:12px;}
+.upd{font-size:10px; color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0;}
+.radar-img{width:100%; border-radius:8px; border:1px solid var(--line); display:block; cursor:zoom-in;}
+.muted{color:var(--muted);} .small{font-size:11px;}
+
+/* Settings drawer */
+.drawer-mask{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:900; display:none;}
+.drawer-mask.open{display:block;}
+.drawer{position:fixed; top:0; right:0; width:400px; max-width:92vw; height:100%; background:var(--panel); border-left:1px solid var(--line); z-index:901; transform:translateX(100%); transition:transform .2s ease; overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,.4);}
+.drawer.open{transform:translateX(0);}
+.drawer h3{margin:0; padding:14px 16px; border-bottom:1px solid var(--line); font-size:15px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:var(--panel2);}
+.drawer .sec{padding:14px 16px; border-bottom:1px solid var(--line);}
+.drawer .sec h4{margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted);}
+.drawer label{display:block; font-size:12px; color:var(--muted); margin:8px 0 3px;}
+.drawer input,.drawer select,.drawer textarea{width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:8px; font-size:13px; font-family:inherit;}
+.drawer textarea{min-height:60px; resize:vertical;}
+.drawer .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.drawer .row4{display:grid; grid-template-columns:repeat(4,1fr); gap:6px;}
+.drawer .esf-edit{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0; border-bottom:1px solid var(--line);}
+.drawer .esf-edit span{font-size:12px;}
+.drawer .actions{display:flex; gap:8px; padding:14px 16px;}
+.drawer .actions .btn{flex:1; text-align:center; padding:10px;}
+.hint{font-size:11px; color:var(--muted); margin-top:6px;}
+
+/* Kiosk / display mode: bigger, hides chrome */
+body.kiosk{font-size:118%;}
+body.kiosk header{padding:10px 20px;}
+body.kiosk .btn.hide-kiosk{display:none;}
+body.kiosk .ss-cell .v{font-size:20px;}
+body.kiosk .card h2{font-size:14px;}
+body.kiosk .now .temp{font-size:52px;}
+body.kiosk .fc{width:170px;}
+body.kiosk .esf-item .e-t{font-size:15px;}
+
+footer{padding:20px; text-align:center; color:var(--muted); font-size:11px; border-top:1px solid var(--line); margin-top:20px;}
+footer a{color:var(--muted); text-decoration:underline;}
+
+/* Print / SITREP */
+@media print{
+header,.feedhealth,.offline,.btn,#map,.drawer,.drawer-mask,.statusstrip .ss-cell:last-child{display:none !important;}
+body{background:#fff; color:#000;}
+.card{break-inside:avoid; box-shadow:none; border:1px solid #999;}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="hdr-row">
-    <div class="brand">
-      <div class="seal">SCC<br>EOC</div>
-      <div>
-        <h1>St. Clair County Emergency Operations Center</h1>
-        <div class="sub">All-Hazards Situational Awareness &mdash; Port Huron, Michigan</div>
-      </div>
-    </div>
-    <div class="hdr-right">
-      <div class="clock">
-        <div class="t" id="clock-t">--:--:--</div>
-        <div class="d" id="clock-d">&mdash;</div>
-      </div>
-      <button class="refresh-btn" onclick="refreshAll()">&#x21bb; Refresh feeds</button>
-    </div>
-  </div>
+<div class="hdr-row">
+<div class="brand">
+<div class="seal">SCC<br>EOC</div>
+<div>
+<h1>St. Clair County Emergency Operations Center</h1>
+<div class="sub">All-Hazards Situational Awareness &mdash; Port Huron, Michigan</div>
+</div>
+</div>
+<div class="hdr-right">
+<div class="clock">
+<div class="t" id="clock-t">--:--:--</div>
+<div class="d" id="clock-d">&mdash;</div>
+</div>
+<button class="btn" onclick="refreshAll()" title="Refresh all feeds now">&#x21bb; Refresh</button>
+<button class="btn hide-kiosk" onclick="genSITREP()" title="Generate a printable daily SITREP from live data">&#128196; SITREP</button>
+<button class="btn hide-kiosk" id="btn-theme" onclick="toggleTheme()" title="Toggle light / dark">&#9788; Theme</button>
+<button class="btn" id="btn-kiosk" onclick="toggleKiosk()" title="Toggle wall-display (kiosk) mode">&#128421; Display</button>
+<button class="btn hide-kiosk" onclick="openDrawer()" title="Edit activation, ESF board, thresholds">&#9881; Settings</button>
+</div>
+</div>
 </header>
 
-<!-- EOC Activation banner: edit the level/note below to reflect current posture -->
-<div class="activation amber" id="activation">
-  <span class="lvl" id="act-lvl">ENHANCED MONITORING</span>
-  <span>EOC Activation Level &mdash; <b id="act-state">Heat Event Watch</b></span>
-  <span class="note" id="act-note">Active Extreme Heat Warning in effect. EOC monitoring conditions; cooling-center &amp; public-health posture elevated. Dashboard auto-refreshes every 5 minutes.</span>
+<!-- Top status strip -->
+<div class="statusstrip" id="statusstrip">
+<div class="ss-cell ss-posture"><span class="k">EOC Posture</span><span class="v p-normal" id="ss-posture">&mdash;</span></div>
+<div class="ss-cell ss-count"><span class="k">Active Warnings</span><span class="v" id="ss-count">&mdash;</span></div>
+<div class="ss-cell ss-worst"><span class="k">Highest Severity</span><span class="v wNone" id="ss-worst">&mdash;</span></div>
+<div class="ss-cell big"><span class="k">Top Priority Now</span><span class="v" id="ss-priority">Loading situational picture&hellip;</span></div>
+</div>
+
+<!-- Feed health -->
+<div class="feedhealth" id="feedhealth"><span class="fh-lbl">Feeds</span></div>
+
+<!-- Offline banner -->
+<div class="offline">&#9888; NETWORK OFFLINE &mdash; data on screen is frozen at the last successful update. Will auto-recover when the connection returns.</div>
+
+<!-- EOC Activation banner (edit via Settings) -->
+<div class="activation" id="activation">
+<span class="lvl" id="act-lvl">&mdash;</span>
+<span>EOC Activation Level &mdash; <b id="act-state">&mdash;</b></span>
+<span class="note" id="act-note"></span>
 </div>
 
 <div class="wrap">
-  <div class="grid">
+<div class="grid">
 
-    <!-- ACTIVE ALERTS -->
-    <section class="card col-8">
-      <h2><span>Active Weather &amp; Hazard Warnings <span class="dot live"></span></span><span class="upd" id="upd-alerts"></span></h2>
-      <div class="body" id="alerts"><div class="loading">Loading active alerts from the National Weather Service&hellip;</div></div>
-    </section>
+<section class="card col-8" id="card-alerts">
+<h2><span>Active Weather &amp; Hazard Warnings <span class="dot live"></span></span><span class="upd" id="upd-alerts"></span></h2>
+<div class="body" id="alerts"><div class="loading">Loading active alerts from the National Weather Service&hellip;</div></div>
+</section>
 
-    <!-- CURRENT + ACTIVATION SUMMARY -->
-    <section class="card col-4">
-      <h2><span>Current Conditions <span class="dot live"></span></span><span class="upd" id="upd-cond"></span></h2>
-      <div class="body" id="conditions"><div class="loading">Loading observations&hellip;</div></div>
-    </section>
+<section class="card col-4">
+<h2><span>Current Conditions <span class="dot live"></span></span><span class="upd" id="upd-cond"></span></h2>
+<div class="body" id="conditions"><div class="loading">Loading observations&hellip;</div></div>
+</section>
 
-    <!-- FORECAST -->
-    <section class="card col-8">
-      <h2><span>7-Period Forecast &mdash; NWS Detroit/Pontiac <span class="dot live"></span></span><span class="upd" id="upd-fc"></span></h2>
-      <div class="body" id="forecast"><div class="loading">Loading forecast&hellip;</div></div>
-    </section>
+<section class="card col-8">
+<h2><span>7-Period Forecast &mdash; NWS Detroit/Pontiac <span class="dot live"></span></span><span class="upd" id="upd-fc"></span></h2>
+<div class="body" id="forecast"><div class="loading">Loading forecast&hellip;</div></div>
+</section>
 
-    <!-- RADAR -->
-    <section class="card col-4">
-      <h2><span>Regional Radar &mdash; KDTX</span></h2>
-      <div class="body">
-        <img class="radar-img" id="radar" alt="KDTX radar loop" src="https://radar.weather.gov/ridge/standard/KDTX_loop.gif" />
-        <div class="small muted" style="margin-top:6px;">Live RIDGE radar loop, Detroit/Pontiac (KDTX). <a href="https://radar.weather.gov/?settings=v1_eyJhZ2VuZGEiOnsiaWQiOm51bGwsImNlbnRlciI6Wy04Mi40LDQyLjk3XSwibG9jYXRpb24iOlstODIuNCw0Mi45N10sInpvb20iOjh9fQ%3D%3D&menu=true" target="_blank" rel="noopener">Full radar &#8599;</a></div>
-      </div>
-    </section>
+<section class="card col-4">
+<h2><span>Regional Radar &mdash; KDTX</span></h2>
+<div class="body">
+<img class="radar-img" id="radar" alt="KDTX radar loop" src="https://radar.weather.gov/ridge/standard/KDTX_loop.gif" onclick="window.open('https://radar.weather.gov/?settings=v1_eyJhZ2VuZGEiOnsiaWQiOm51bGwsImNlbnRlciI6Wy04Mi40LDQyLjk3XSwibG9jYXRpb24iOlstODIuNCw0Mi45N10sInpvb20iOjh9fQ%3D%3D&menu=true','_blank')" />
+<div class="small muted" style="margin-top:6px;">Live RIDGE loop, Detroit/Pontiac (KDTX). Click to open full radar.</div>
+</div>
+</section>
 
-    <!-- RIVER / LAKE LEVELS -->
-    <section class="card col-7">
-      <h2><span>River &amp; Lake Levels &mdash; USGS / NOAA <span class="dot live"></span></span><span class="upd" id="upd-water"></span></h2>
-      <div class="body" id="water"><div class="loading">Loading gauge data&hellip;</div></div>
-    </section>
+<section class="card col-12">
+<h2><span>Situational Map &mdash; Warnings &amp; Gauges</span><span class="upd" id="upd-map"></span></h2>
+<div class="body"><div id="map"></div><div class="small muted" style="margin-top:6px;">County, river/lake gauges, and any NWS warning areas with map geometry. Zone-only alerts may not draw a polygon.</div></div>
+</section>
 
-    <!-- EARTHQUAKES -->
-    <section class="card col-5">
-      <h2><span>Seismic Activity &mdash; Great Lakes Region <span class="dot live"></span></span><span class="upd" id="upd-quake"></span></h2>
-      <div class="body" id="quakes"><div class="loading">Loading USGS earthquake feed&hellip;</div></div>
-    </section>
+<section class="card col-7">
+<h2><span>River &amp; Lake Levels &mdash; USGS / NOAA <span class="dot live"></span></span><span class="upd" id="upd-water"></span></h2>
+<div class="body" id="water"><div class="loading">Loading gauge data&hellip;</div></div>
+</section>
 
-    <!-- USACE ST. CLAIR RIVER STAGE PROFILE -->
-    <section class="card col-7">
-      <h2><span>Army Corps of Engineers &mdash; St. Clair River Stage Profile <span class="dot live"></span></span><span class="upd" id="upd-usace"></span></h2>
-      <div class="body" id="usace"><div class="loading">Loading USACE Detroit District gauges&hellip;</div></div>
-    </section>
+<section class="card col-5">
+<h2><span>Seismic Activity &mdash; Great Lakes Region <span class="dot live"></span></span><span class="upd" id="upd-quake"></span></h2>
+<div class="body" id="quakes"><div class="loading">Loading USGS earthquake feed&hellip;</div></div>
+</section>
 
-    <!-- MARINE WEATHER -->
-    <section class="card col-5">
-      <h2><span>Marine Weather &mdash; Adjacent Waters <span class="dot live"></span></span><span class="upd" id="upd-marine"></span></h2>
-      <div class="body" id="marine"><div class="loading">Loading marine forecast &amp; warnings&hellip;</div></div>
-    </section>
+<section class="card col-7">
+<h2><span>Army Corps of Engineers &mdash; St. Clair River Stage Profile <span class="dot live"></span></span><span class="upd" id="upd-usace"></span></h2>
+<div class="body" id="usace"><div class="loading">Loading USACE Detroit District gauges&hellip;</div></div>
+</section>
 
-    <!-- HAZARDOUS WEATHER OUTLOOK -->
-    <section class="card col-6">
-      <h2><span>Hazardous Weather Outlook <span class="dot live"></span></span><span class="upd" id="upd-hwo"></span></h2>
-      <div class="body" id="hwo"><div class="loading">Loading outlook&hellip;</div></div>
-    </section>
+<section class="card col-5">
+<h2><span>Marine Weather &mdash; Adjacent Waters <span class="dot live"></span></span><span class="upd" id="upd-marine"></span></h2>
+<div class="body" id="marine"><div class="loading">Loading marine forecast &amp; warnings&hellip;</div></div>
+</section>
 
-    <!-- RESPONSE & RECOVERY STATUS -->
-    <section class="card col-6">
-      <h2><span>Response &amp; Recovery &mdash; ESF Status Board</span></h2>
-      <div class="body">
-        <div class="esf" id="esf"></div>
-        <div class="small muted" style="margin-top:10px;">ESF readiness is set by EOC staff in the dashboard source. <span style="color:var(--warn);">Elevated</span> ESFs reflect the active heat event (cooling centers, public health, messaging).</div>
-      </div>
-    </section>
+<section class="card col-6">
+<h2><span>Hazardous Weather Outlook <span class="dot live"></span></span><span class="upd" id="upd-hwo"></span></h2>
+<div class="body" id="hwo"><div class="loading">Loading outlook&hellip;</div></div>
+</section>
 
-    <!-- ALL HAZARDS RESOURCE LINKS -->
-    <section class="card col-12">
-      <h2><span>All-Hazards Quick Links &mdash; Response &amp; Recovery Resources</span></h2>
-      <div class="body">
-        <div class="links" id="links"></div>
-      </div>
-    </section>
+<section class="card col-6">
+<h2><span>Response &amp; Recovery &mdash; ESF Status Board</span><span class="upd">click a pill to change</span></h2>
+<div class="body">
+<div class="esf" id="esf"></div>
+<div class="small muted" style="margin-top:10px;">Click any status pill to cycle <b>Ready &rarr; Elevated &rarr; Activated</b>. Changes save in this browser &mdash; no login needed.</div>
+</div>
+</section>
 
-  </div>
+<section class="card col-12">
+<h2><span>All-Hazards Quick Links &mdash; Response &amp; Recovery Resources</span></h2>
+<div class="body"><div class="links" id="links"></div></div>
+</section>
+
+</div>
 </div>
 
 <footer>
-  St. Clair County EOC All-Hazards Dashboard &middot; Live data from
-  <a href="https://www.weather.gov" target="_blank" rel="noopener">NWS</a>,
-  <a href="https://waterdata.usgs.gov" target="_blank" rel="noopener">USGS</a>, and
-  <a href="https://tidesandcurrents.noaa.gov" target="_blank" rel="noopener">NOAA</a>.
-  Unofficial situational-awareness aid &mdash; always confirm life-safety decisions against official NWS/EM channels.
-  <br>Page auto-refreshes every 5 minutes. Last full refresh: <span id="last-refresh">&mdash;</span>
+St. Clair County EOC All-Hazards Dashboard &middot; Live data from
+<a href="https://www.weather.gov" target="_blank" rel="noopener">NWS</a>,
+<a href="https://waterdata.usgs.gov" target="_blank" rel="noopener">USGS</a>, and
+<a href="https://tidesandcurrents.noaa.gov" target="_blank" rel="noopener">NOAA</a>.
+Unofficial situational-awareness aid &mdash; always confirm life-safety decisions against official NWS/EM channels.
+<br>Auto-refreshes every 5 min &middot; auto-reloads unattended. Last full refresh: <span id="last-refresh">&mdash;</span>
 </footer>
 
+<!-- Settings drawer -->
+<div class="drawer-mask" id="drawer-mask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+<h3>Dashboard Settings <button class="btn" onclick="closeDrawer()">Close</button></h3>
+
+<div class="sec">
+<h4>EOC Activation</h4>
+<label>Posture level</label>
+<select id="set-act-level">
+<option value="NORMAL">NORMAL / MONITORING (green)</option>
+<option value="ENHANCED MONITORING">ENHANCED MONITORING (amber)</option>
+<option value="PARTIAL ACTIVATION">PARTIAL ACTIVATION (orange)</option>
+<option value="FULL ACTIVATION">FULL ACTIVATION (red)</option>
+</select>
+<label>Event / posture name</label>
+<input id="set-act-state" placeholder="e.g. Heat Event Watch" />
+<label>Note (shown on the banner)</label>
+<textarea id="set-act-note" placeholder="Short situational note for staff&hellip;"></textarea>
+</div>
+
+<div class="sec">
+<h4>ESF Readiness</h4>
+<div id="esf-editor"></div>
+<div class="hint">You can also click pills directly on the board.</div>
+</div>
+
+<div class="sec">
+<h4>River Flood-Stage Thresholds (ft)</h4>
+<div class="hint" style="margin-bottom:6px;">Verify official values on NWS AHPS for each gauge, then enter here. Leave blank if a gauge has no defined flood stage (e.g., Great Lakes connecting channels).</div>
+<div id="thresh-editor"></div>
+</div>
+
+<div class="sec">
+<h4>Display &amp; Unattended</h4>
+<label>Auto full-reload every (hours)</label>
+<input id="set-reload" type="number" min="1" max="48" step="1" />
+<label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" id="set-chime" style="width:auto;" /> Audible chime on new warning</label>
+<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="set-wake" style="width:auto;" /> Keep screen awake (wake lock)</label>
+</div>
+
+<div class="actions">
+<button class="btn on" onclick="saveSettings()">Save</button>
+<button class="btn" onclick="resetSettings()">Reset defaults</button>
+</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* ===================== Config ===================== */
-const LAT = 42.9709, LON = -82.4249;      // Port Huron / county seat
-const ZONES = "MIZ063,MIC147";            // forecast zone + county zone
-const WFO = "DTX";                         // Detroit/Pontiac
+/* ============================================================
+   CONFIG + PERSISTENCE  (no backend / no password)
+   ============================================================ */
+const LAT = 42.9709, LON = -82.4249;              // Port Huron / county seat
+const ZONES = "MIZ063,MIC147";                    // forecast zone + county zone
+const WFO = "DTX";                                // Detroit/Pontiac
+const MARINE_ZONES = "LHZ443,LHZ464,LCZ422,LCZ460";
 const UA_HEADERS = { "Accept":"application/geo+json", "User-Agent":"SCC-EOC-Dashboard (stclaircounty.org)" };
 const USGS_SITES = [
-  {id:"04159130", name:"St. Clair River at Port Huron"},
-  {id:"04160600", name:"Belle River at Memphis"}
+  {id:"04159130", name:"St. Clair River at Port Huron", lat:42.966, lon:-82.421},
+  {id:"04160600", name:"Belle River at Memphis",        lat:42.899, lon:-82.771}
 ];
-const NOAA_WL_STATION = "9014090"; // Mouth of Black River (Great Lakes water level)
+const NOAA_WL_STATION = "9014090";                // Mouth of Black River
 
-/* ===================== Clock ===================== */
+const DEFAULTS = {
+  activation: { level:"ENHANCED MONITORING", state:"Routine Monitoring", note:"EOC monitoring conditions. Dashboard auto-refreshes every 5 minutes." },
+  esf: [
+    ["ESF-1","Transportation","s-green"],["ESF-2","Communications","s-green"],
+    ["ESF-3","Public Works","s-green"],["ESF-4","Firefighting","s-green"],
+    ["ESF-5","Info & Planning","s-green"],["ESF-6","Mass Care/Shelter","s-green"],
+    ["ESF-7","Logistics","s-green"],["ESF-8","Public Health/Medical","s-green"],
+    ["ESF-9","Search & Rescue","s-green"],["ESF-10","HazMat","s-green"],
+    ["ESF-13","Public Safety","s-green"],["ESF-15","External Affairs","s-green"]
+  ],
+  thresholds: {   // ft; null = not defined. VERIFY on NWS AHPS before relying on these.
+    "04159130": { action:null, minor:null, moderate:null, major:null },
+    "04160600": { action:null, minor:null, moderate:null, major:null }
+  },
+  reloadHours: 6, chime:false, wake:true, theme:"dark", kiosk:false
+};
+
+function loadCfg(){
+  try{
+    const raw = localStorage.getItem("sccEocCfg");
+    if(!raw) return structuredClone(DEFAULTS);
+    const saved = JSON.parse(raw);
+    return Object.assign(structuredClone(DEFAULTS), saved,
+      { thresholds: Object.assign(structuredClone(DEFAULTS.thresholds), saved.thresholds||{}) });
+  }catch(e){ return structuredClone(DEFAULTS); }
+}
+function saveCfg(){ try{ localStorage.setItem("sccEocCfg", JSON.stringify(CFG)); }catch(e){} }
+let CFG = loadCfg();
+
+/* ============================================================
+   CLOCK + HELPERS
+   ============================================================ */
 function tickClock(){
   const now = new Date();
-  document.getElementById("clock-t").textContent =
-     now.toLocaleTimeString("en-US",{hour12:false,timeZone:"America/Detroit"});
-  document.getElementById("clock-d").textContent =
-     now.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric",year:"numeric",timeZone:"America/Detroit"}) + " ET";
+  document.getElementById("clock-t").textContent = now.toLocaleTimeString("en-US",{hour12:false,timeZone:"America/Detroit"});
+  document.getElementById("clock-d").textContent = now.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric",year:"numeric",timeZone:"America/Detroit"}) + " ET";
 }
 setInterval(tickClock,1000); tickClock();
-
-function stamp(id){ document.getElementById(id).textContent = "updated " +
-  new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",timeZone:"America/Detroit"}); }
+function nowET(){ return new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",timeZone:"America/Detroit"}); }
+function stamp(id){ const e=document.getElementById(id); if(e) e.textContent = "updated "+nowET(); }
 function fmtTime(iso){ try{ return new Date(iso).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"America/Detroit"});}catch(e){return "";} }
+async function getJSON(url, headers){ const r = await fetch(url,{headers:headers||{}}); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
 
-async function getJSON(url, headers){
-  const r = await fetch(url, {headers: headers||{}});
-  if(!r.ok) throw new Error("HTTP "+r.status);
-  return r.json();
+/* ============================================================
+   FEED HEALTH
+   ============================================================ */
+const FEEDS = { alerts:"Alerts", conditions:"Obs", forecast:"Forecast", hwo:"HWO", water:"Water", usace:"USACE", marine:"Marine", quakes:"Quakes", map:"Map" };
+const feedState = {};
+function renderFeedHealth(){
+  const el = document.getElementById("feedhealth");
+  el.innerHTML = `<span class="fh-lbl">Feeds</span>` + Object.keys(FEEDS).map(k=>{
+    const s = feedState[k] || {st:"wait"};
+    return `<span class="fh ${s.st}"><span class="d"></span><span class="nm">${FEEDS[k]}</span>${s.t?`<span class="tm">${s.t}</span>`:""}</span>`;
+  }).join("");
 }
+function feedOK(k){ feedState[k]={st:"ok", t:nowET()}; renderFeedHealth(); markSuccess(); }
+function feedDown(k){ feedState[k]={st:"down", t:nowET()}; renderFeedHealth(); }
+renderFeedHealth();
 
-/* ===================== Alerts ===================== */
+/* ============================================================
+   ALERTS + STATUS STRIP + NEW-ALERT DETECTION
+   ============================================================ */
 const SEV_ORDER = {Extreme:0,Severe:1,Moderate:2,Minor:3,Unknown:4};
+const SEV_NAME  = ["Extreme","Severe","Moderate","Minor","None"];
+let LAST_ALERTS = [];
+function seenKeys(){ try{ return JSON.parse(localStorage.getItem("sccSeenAlerts")||"{}"); }catch(e){ return {}; } }
+function saveSeen(o){ try{ localStorage.setItem("sccSeenAlerts", JSON.stringify(o)); }catch(e){} }
+
 async function loadAlerts(){
   const el = document.getElementById("alerts");
   try{
     const d = await getJSON(`https://api.weather.gov/alerts/active?zone=${ZONES},${MARINE_ZONES}`, UA_HEADERS);
     let feats = (d.features||[]).map(f=>f.properties);
-    // de-dupe by event+area
-    const seen=new Set(); feats=feats.filter(p=>{const k=p.event+"|"+(p.areaDesc||"");if(seen.has(k))return false;seen.add(k);return true;});
+    const seen0=new Set(); feats=feats.filter(p=>{const k=p.event+"|"+(p.areaDesc||"");if(seen0.has(k))return false;seen0.add(k);return true;});
     feats.sort((a,b)=>(SEV_ORDER[a.severity]??9)-(SEV_ORDER[b.severity]??9));
+    LAST_ALERTS = feats;
+
+    // New-alert detection
+    const prev = seenKeys(); const nowKeys={}; let anyNew=false; const cutoff=Date.now()-36*3600*1000;
+    Object.keys(prev).forEach(k=>{ if(prev[k]>cutoff) nowKeys[k]=prev[k]; });
+    feats.forEach(p=>{ const id=p.id||(p.event+"|"+(p.areaDesc||"")); if(!(id in prev)){ anyNew=true; } nowKeys[id]=Date.now(); p.__new = !(id in prev); });
+    saveSeen(nowKeys);
+
     if(!feats.length){
       el.innerHTML = `<div class="all-clear"><span class="ring">&#10003;</span> No active NWS warnings, watches, or advisories for St. Clair County or adjacent waters.</div>
         <div class="small muted" style="margin-top:8px;">Monitoring land zones MIZ063 &amp; MIC147 and marine zones for Lake Huron, the St. Clair River, and Lake St. Clair.</div>`;
@@ -360,23 +544,55 @@ async function loadAlerts(){
         const ugc = (p.geocode && p.geocode.UGC) || [];
         const isMarine = ugc.some(u=>/^L[A-Z]Z/.test(u));
         const marineTag = isMarine ? ` <span class="badge b-Marine">&#9875; Marine</span>` : "";
-        return `<div class="alert sev-${sev}${isMarine?' marine':''}">
+        const newTag = p.__new ? ` <span class="badge b-New">&#9733; New</span>` : "";
+        return `<div class="alert sev-${sev}${isMarine?' marine':''}${p.__new?' new':''}">
           <div class="a-top">
-            <span class="a-event">${p.event||"Alert"} <span class="badge b-${sev}">${sev}</span>${marineTag}</span>
+            <span class="a-event">${p.event||"Alert"} <span class="badge b-${sev}">${sev}</span>${marineTag}${newTag}</span>
             <span class="a-time">until ${fmtTime(p.expires||p.ends)}</span>
           </div>
           <div class="a-head">${(p.headline||p.areaDesc||"").replace(/</g,"&lt;")}</div>
         </div>`;
       }).join("");
     }
-    stamp("upd-alerts");
-  }catch(e){ el.innerHTML = `<div class="err">Could not load alerts (${e.message}). <a href="https://forecast.weather.gov/MapClick.php?zoneid=MIZ063" target="_blank" rel="noopener">Open NWS zone page &#8599;</a></div>`; }
+    if(anyNew && feats.length){ document.getElementById("card-alerts").classList.add("flash"); setTimeout(()=>document.getElementById("card-alerts").classList.remove("flash"),4200); if(CFG.chime) chime(); }
+    updateStatusStrip();
+    stamp("upd-alerts"); feedOK("alerts");
+  }catch(e){ el.innerHTML = `<div class="err">Could not load alerts (${e.message}). <a href="https://forecast.weather.gov/MapClick.php?zoneid=MIZ063" target="_blank" rel="noopener">Open NWS zone page &#8599;</a></div>`; feedDown("alerts"); }
 }
 
-/* ===================== Conditions + Forecast ===================== */
+function updateStatusStrip(){
+  const feats = LAST_ALERTS;
+  const worstIdx = feats.length ? Math.min(...feats.map(p=>SEV_ORDER[p.severity]??4)) : 4;
+  const worst = SEV_NAME[Math.min(worstIdx,4)];
+  document.getElementById("ss-count").textContent = feats.length;
+  const wEl = document.getElementById("ss-worst");
+  wEl.textContent = feats.length ? worst : "None";
+  wEl.className = "v w"+(feats.length?worst:"None");
+  const pri = document.getElementById("ss-priority");
+  if(feats.length){ pri.textContent = (feats[0].event||"Alert") + " — " + (feats[0].headline||feats[0].areaDesc||"").replace(/</g,"&lt;"); }
+  else { pri.textContent = "No active warnings. Routine all-hazards monitoring."; }
+  // posture from activation level
+  const map = {"NORMAL":["NORMAL","p-normal"],"ENHANCED MONITORING":["ENHANCED","p-enhanced"],"PARTIAL ACTIVATION":["PARTIAL","p-partial"],"FULL ACTIVATION":["FULL","p-full"]};
+  const m = map[CFG.activation.level] || ["ENHANCED","p-enhanced"];
+  const pEl = document.getElementById("ss-posture"); pEl.textContent = m[0]; pEl.className = "v "+m[1];
+}
+
+/* simple WebAudio chime */
+function chime(){ try{ const ac=new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(),g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.type="sine"; o.frequency.value=880; g.gain.setValueAtTime(.001,ac.currentTime); g.gain.exponentialRampToValueAtTime(.25,ac.currentTime+.05); g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.9); o.start(); o.stop(ac.currentTime+.95);}catch(e){} }
+
+/* ============================================================
+   CONDITIONS + FORECAST (+ heat-index context)
+   ============================================================ */
 let POINT=null;
 async function getPoint(){ if(!POINT){ POINT = (await getJSON(`https://api.weather.gov/points/${LAT},${LON}`, UA_HEADERS)).properties; } return POINT; }
-
+function heatPill(hiF){
+  if(hiF==null) return "";
+  let cls="hp-none", lbl="Heat index "+hiF+"°";
+  if(hiF>=105){cls="hp-warning"; lbl="&#9888; Heat index "+hiF+"° — Warning range";}
+  else if(hiF>=100){cls="hp-advisory"; lbl="&#9888; Heat index "+hiF+"° — Advisory range";}
+  else if(hiF>=90){cls="hp-caution"; lbl="Heat index "+hiF+"° — Caution";}
+  return `<div class="heatpill ${cls}">${lbl}</div>`;
+}
 async function loadConditions(){
   const el = document.getElementById("conditions");
   try{
@@ -388,86 +604,102 @@ async function loadConditions(){
     const wc = o.windChill && o.windChill.value!=null ? Math.round(o.windChill.value*9/5+32) : null;
     const hi = o.heatIndex && o.heatIndex.value!=null ? Math.round(o.heatIndex.value*9/5+32) : null;
     const wsp = o.windSpeed.value!=null ? Math.round(o.windSpeed.value*0.621371) : null;
-    const feels = wc!=null?`Wind chill ${wc}&deg;`:(hi!=null?`Heat index ${hi}&deg;`:"");
+    const feels = wc!=null?`Wind chill ${wc}&deg;`:"";
     el.innerHTML = `<div class="now">
-        <div class="temp">${f==null?"--":f}&deg;<span style="font-size:18px;">F</span></div>
-        <div class="meta">
-          <div><b>${o.textDescription||"&mdash;"}</b></div>
-          <div>${feels}</div>
-          <div>Wind ${wsp==null?"&mdash;":wsp+" mph"} &middot; Humidity ${o.relativeHumidity.value!=null?Math.round(o.relativeHumidity.value)+"%":"&mdash;"}</div>
-          <div class="small">Obs: ${station} &middot; ${fmtTime(o.timestamp)}</div>
-        </div>
-      </div>`;
-    stamp("upd-cond");
-  }catch(e){ el.innerHTML = `<div class="err">Observations unavailable (${e.message}).</div>`; }
+      <div class="temp">${f==null?"--":f}&deg;<span style="font-size:18px;">F</span></div>
+      <div class="meta">
+        <div><b>${o.textDescription||"&mdash;"}</b></div>
+        <div>${feels}</div>
+        <div>Wind ${wsp==null?"&mdash;":wsp+" mph"} &middot; Humidity ${o.relativeHumidity.value!=null?Math.round(o.relativeHumidity.value)+"%":"&mdash;"}</div>
+        <div class="small">Obs: ${station} &middot; ${fmtTime(o.timestamp)}</div>
+      </div></div>${heatPill(hi)}`;
+    stamp("upd-cond"); feedOK("conditions");
+  }catch(e){ el.innerHTML = `<div class="err">Observations unavailable (${e.message}).</div>`; feedDown("conditions"); }
 }
-
 async function loadForecast(){
   const el = document.getElementById("forecast");
   try{
     const p = await getPoint();
     const fc = (await getJSON(p.forecast, UA_HEADERS)).properties.periods.slice(0,7);
     el.innerHTML = `<div class="fc-row">` + fc.map(pr=>`
-      <div class="fc">
-        <div class="nm">${pr.name}</div>
-        <div class="tm">${pr.temperature}&deg;</div>
-        <div class="ds">${pr.shortForecast}</div>
-        <div class="wind">${pr.windSpeed||""} ${pr.windDirection||""}</div>
-      </div>`).join("") + `</div>`;
-    stamp("upd-fc");
-  }catch(e){ el.innerHTML = `<div class="err">Forecast unavailable (${e.message}).</div>`; }
+      <div class="fc"><div class="nm">${pr.name}</div><div class="tm">${pr.temperature}&deg;</div>
+      <div class="ds">${pr.shortForecast}</div><div class="wind">${pr.windSpeed||""} ${pr.windDirection||""}</div></div>`).join("") + `</div>`;
+    stamp("upd-fc"); feedOK("forecast");
+  }catch(e){ el.innerHTML = `<div class="err">Forecast unavailable (${e.message}).</div>`; feedDown("forecast"); }
 }
 
-/* ===================== Hazardous Weather Outlook ===================== */
+/* ============================================================
+   HAZARDOUS WEATHER OUTLOOK
+   ============================================================ */
 async function loadHWO(){
   const el = document.getElementById("hwo");
   try{
     const list = await getJSON(`https://api.weather.gov/products/types/HWO/locations/${WFO}`, UA_HEADERS);
-    if(!list["@graph"] || !list["@graph"].length){ el.innerHTML = `<div class="muted small">No current Hazardous Weather Outlook product.</div>`; return; }
+    if(!list["@graph"] || !list["@graph"].length){ el.innerHTML = `<div class="muted small">No current Hazardous Weather Outlook product.</div>`; feedOK("hwo"); return; }
     const prod = await getJSON(list["@graph"][0]["@id"], UA_HEADERS);
     let txt = (prod.productText||"").replace(/\$\$[\s\S]*$/,"").trim();
-    // grab the narrative section
     const idx = txt.search(/DAY ONE|This Hazardous Weather Outlook|\.DAY ONE/i);
     if(idx>0) txt = txt.slice(idx);
     txt = txt.split("\n").filter(l=>l.trim()!=="").slice(0,18).join("\n");
-    el.innerHTML = `<pre style="white-space:pre-wrap; font-size:12px; color:#cdd8ec; margin:0; font-family:inherit;">${txt.replace(/</g,"&lt;")}</pre>`;
-    stamp("upd-hwo");
-  }catch(e){ el.innerHTML = `<div class="err">Outlook unavailable (${e.message}). <a href="https://forecast.weather.gov/product.php?site=DTX&issuedby=DTX&product=HWO" target="_blank" rel="noopener">Open HWO &#8599;</a></div>`; }
+    el.innerHTML = `<pre style="white-space:pre-wrap; font-size:12px; color:var(--text); opacity:.9; margin:0; font-family:inherit;">${txt.replace(/</g,"&lt;")}</pre>`;
+    stamp("upd-hwo"); feedOK("hwo");
+  }catch(e){ el.innerHTML = `<div class="err">Outlook unavailable (${e.message}). <a href="https://forecast.weather.gov/product.php?site=DTX&issuedby=DTX&product=HWO" target="_blank" rel="noopener">Open HWO &#8599;</a></div>`; feedDown("hwo"); }
 }
 
-/* ===================== River / Lake Levels ===================== */
+/* ============================================================
+   RIVER / LAKE LEVELS (+ sparkline + flood-stage context)
+   ============================================================ */
+function sparkline(vals){
+  if(!vals || vals.length<2) return "";
+  const w=90,h=22,n=vals.length, mn=Math.min(...vals), mx=Math.max(...vals), sp=(mx-mn)||1;
+  const pts = vals.map((v,i)=>`${(i/(n-1)*w).toFixed(1)},${(h-2-((v-mn)/sp)*(h-4)).toFixed(1)}`).join(" ");
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline fill="none" stroke="var(--accent)" stroke-width="1.5" points="${pts}"/></svg>`;
+}
+function floodContext(siteId, gh){
+  const t = (CFG.thresholds && CFG.thresholds[siteId]) || {};
+  if(gh==null || (t.action==null && t.minor==null && t.moderate==null && t.major==null))
+    return `<div class="fstage fs-none">No flood stage set &middot; edit in Settings</div>`;
+  let cat="Normal", cls="fs-normal", ref=null, refName="";
+  if(t.major!=null && gh>=t.major){cat="MAJOR FLOOD"; cls="fs-major";}
+  else if(t.moderate!=null && gh>=t.moderate){cat="MODERATE FLOOD"; cls="fs-moderate";}
+  else if(t.minor!=null && gh>=t.minor){cat="MINOR FLOOD"; cls="fs-minor";}
+  else if(t.action!=null && gh>=t.action){cat="ACTION STAGE"; cls="fs-action";}
+  // distance to next threshold up
+  const ladder=[["action",t.action],["minor",t.minor],["moderate",t.moderate],["major",t.major]].filter(x=>x[1]!=null);
+  const next = ladder.find(x=>gh < x[1]);
+  let dist = next ? `${(next[1]-gh).toFixed(2)} ft below ${next[0]} stage` : (ladder.length?`above all defined stages`:"");
+  return `<div class="fstage ${cls}">${cat}${dist?` &middot; ${dist}`:""}</div>`;
+}
 async function loadWater(){
   const el = document.getElementById("water");
   const sites = USGS_SITES.map(s=>s.id).join(",");
   let rows = "";
   try{
-    const url = `https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${sites}&parameterCd=00065,00060,00010&siteStatus=all`;
+    const url = `https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${sites}&parameterCd=00065,00060,00010&period=P3D&siteStatus=all`;
     const d = await getJSON(url);
-    const byName = {};
+    const byId = {};
     (d.value.timeSeries||[]).forEach(ts=>{
       const sid = ts.sourceInfo.siteCode[0].value;
       const code = ts.variable.variableCode[0].value;
       const vals = ts.values[0].value;
       if(!vals||!vals.length) return;
-      const last = vals[vals.length-1];
-      const prev = vals.length>3?vals[vals.length-4]:vals[0];
-      byName[sid] = byName[sid]||{};
-      byName[sid][code] = {v:parseFloat(last.value), t:last.dateTime, prev:parseFloat(prev.value)};
+      const nums = vals.map(v=>parseFloat(v.value)).filter(x=>!isNaN(x));
+      const last = vals[vals.length-1], prev = vals.length>3?vals[vals.length-4]:vals[0];
+      byId[sid]=byId[sid]||{}; byId[sid][code]={v:parseFloat(last.value), t:last.dateTime, prev:parseFloat(prev.value), series:nums.slice(-96)};
     });
     USGS_SITES.forEach(s=>{
-      const r = byName[s.id];
+      const r = byId[s.id];
       if(!r){ rows += `<tr><td>${s.name}</td><td class="num muted">no data</td><td class="num muted">&mdash;</td><td class="num muted">&mdash;</td></tr>`; return; }
-      const gh = r["00065"], q = r["00060"], wt = r["00010"];
-      let trend="trend-flat", arr="&rarr;";
-      if(gh){ const dlt=gh.v-gh.prev; if(dlt>0.05){trend="trend-up";arr="&uarr;";} else if(dlt<-0.05){trend="trend-dn";arr="&darr;";} }
-      const tempF = wt? (wt.v*9/5+32).toFixed(1)+"&deg;F" : "&mdash;";
+      const gh=r["00065"], q=r["00060"], wt=r["00010"];
+      let trend="trend-flat", arr="&#8594;";
+      if(gh){ const dl=gh.v-gh.prev; if(dl>0.05){trend="trend-up";arr="&#9650;";} else if(dl<-0.05){trend="trend-dn";arr="&#9660;";} }
+      const tempF = wt? (wt.v*9/5+32).toFixed(1)+"&deg;F":"&mdash;";
       rows += `<tr>
-        <td>${s.name}<div class="small muted">USGS ${s.id} &middot; ${gh?fmtTime(gh.t):""}</div></td>
-        <td class="num ${trend}">${gh?gh.v.toFixed(2)+" ft "+arr:"&mdash;"}</td>
+        <td>${s.name}<div class="small muted">USGS ${s.id} &middot; ${gh?fmtTime(gh.t):""}</div>${gh?floodContext(s.id,gh.v):""}</td>
+        <td class="num ${trend}">${gh?gh.v.toFixed(2)+" ft "+arr:"&mdash;"}<div>${gh?sparkline(gh.series):""}</div></td>
         <td class="num">${q?Math.round(q.v).toLocaleString()+" cfs":"&mdash;"}</td>
         <td class="num">${tempF}</td></tr>`;
     });
-    // NOAA Great Lakes water level
     let noaaRow="";
     try{
       const w = await getJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station=${NOAA_WL_STATION}&product=water_level&datum=IGLD&units=english&time_zone=lst_ldt&format=json`);
@@ -475,168 +707,271 @@ async function loadWater(){
         noaaRow = `<tr><td>Black River Mouth (Great Lakes)<div class="small muted">NOAA ${NOAA_WL_STATION} &middot; IGLD datum</div></td><td class="num">${parseFloat(dd.v).toFixed(2)} ft</td><td class="num muted">&mdash;</td><td class="num muted">&mdash;</td></tr>`;
       }
     }catch(e){}
-    el.innerHTML = `<table><thead><tr><th>Gauge</th><th class="num">Gage Height</th><th class="num">Discharge</th><th class="num">Water Temp</th></tr></thead><tbody>${rows}${noaaRow}</tbody></table>
-      <div class="small muted" style="margin-top:8px;">&uarr; rising &middot; &darr; falling over last hour. <a href="https://water.noaa.gov/wfo/DTX" target="_blank" rel="noopener">NWS river flood forecasts &#8599;</a></div>`;
-    stamp("upd-water");
-  }catch(e){ el.innerHTML = `<div class="err">Gauge data unavailable (${e.message}). <a href="https://waterdata.usgs.gov/mi/nwis/rt" target="_blank" rel="noopener">Open USGS MI &#8599;</a></div>`; }
+    el.innerHTML = `<table><thead><tr><th>Gauge</th><th class="num">Gage Ht / 72h</th><th class="num">Discharge</th><th class="num">Temp</th></tr></thead><tbody>${rows}${noaaRow}</tbody></table>
+      <div class="small muted" style="margin-top:8px;">&#9650; rising &middot; &#9660; falling (last hr) &middot; sparkline = 72h trend. <a href="https://water.noaa.gov/wfo/DTX" target="_blank" rel="noopener">NWS flood forecasts &#8599;</a></div>`;
+    stamp("upd-water"); feedOK("water");
+  }catch(e){ el.innerHTML = `<div class="err">Gauge data unavailable (${e.message}). <a href="https://waterdata.usgs.gov/mi/nwis/rt" target="_blank" rel="noopener">Open USGS MI &#8599;</a></div>`; feedDown("water"); }
 }
 
-/* ===================== Earthquakes ===================== */
+/* ============================================================
+   EARTHQUAKES
+   ============================================================ */
 function dist(la1,lo1,la2,lo2){const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180,a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 async function loadQuakes(){
   const el = document.getElementById("quakes");
   try{
     const d = await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson");
     let q = (d.features||[]).map(f=>({m:f.properties.mag,place:f.properties.place,t:f.properties.time,url:f.properties.url,lo:f.geometry.coordinates[0],la:f.geometry.coordinates[1]}))
-      .filter(x=>dist(LAT,LON,x.la,x.lo)<800)
-      .sort((a,b)=>b.t-a.t).slice(0,8);
+      .filter(x=>dist(LAT,LON,x.la,x.lo)<800).sort((a,b)=>b.t-a.t).slice(0,8);
     if(!q.length){ el.innerHTML = `<div class="all-clear"><span class="ring">&#10003;</span> No M2.5+ earthquakes within 800 km in the past month.</div>`; }
-    else{
-      el.innerHTML = q.map(x=>{
-        const mc = x.m>=5?"m5":x.m>=4?"m4":x.m>=3?"m3":"m2";
-        const km = Math.round(dist(LAT,LON,x.la,x.lo));
-        return `<div class="quake"><div class="mag ${mc}">${x.m.toFixed(1)}</div>
-          <div><div class="q-place"><a href="${x.url}" target="_blank" rel="noopener">${x.place||"Unknown"}</a></div>
-          <div class="q-meta">${fmtTime(new Date(x.t).toISOString())} &middot; ~${km} km from county</div></div></div>`;
-      }).join("");
-    }
-    stamp("upd-quake");
-  }catch(e){ el.innerHTML = `<div class="err">Earthquake feed unavailable (${e.message}).</div>`; }
+    else{ el.innerHTML = q.map(x=>{ const mc=x.m>=5?"m5":x.m>=4?"m4":x.m>=3?"m3":"m2"; const km=Math.round(dist(LAT,LON,x.la,x.lo));
+      return `<div class="quake"><div class="mag ${mc}">${x.m.toFixed(1)}</div><div><div class="q-place"><a href="${x.url}" target="_blank" rel="noopener">${x.place||"Unknown"}</a></div><div class="q-meta">${fmtTime(new Date(x.t).toISOString())} &middot; ~${km} km from county</div></div></div>`; }).join(""); }
+    stamp("upd-quake"); feedOK("quakes");
+  }catch(e){ el.innerHTML = `<div class="err">Earthquake feed unavailable (${e.message}).</div>`; feedDown("quakes"); }
 }
 
-/* ===================== USACE St. Clair River Stage Profile ===================== */
+/* ============================================================
+   USACE ST. CLAIR RIVER STAGE PROFILE
+   ============================================================ */
 const USACE_GAUGES = [
-  {tsid:"FortGratiot.Stage.Inst.1Hour.0.noaa-rev",   name:"Fort Gratiot",          note:"Head of river / Lake Huron"},
-  {tsid:"MouthBlackRiver.Stage.Inst.1Hour.0.noaa-rev",name:"Mouth of Black River",  note:"Port Huron"},
-  {tsid:"StClairSP.Stage.Inst.1Hour.0.noaa-rev",     name:"St. Clair State Police", note:"Mid-river"},
-  {tsid:"Algonac.Stage.Inst.1Hour.0.noaa-rev",       name:"Algonac",               note:"Near Lake St. Clair"}
+  {tsid:"FortGratiot.Stage.Inst.1Hour.0.noaa-rev", name:"Fort Gratiot", note:"Head of river / Lake Huron"},
+  {tsid:"MouthBlackRiver.Stage.Inst.1Hour.0.noaa-rev",name:"Mouth of Black River", note:"Port Huron"},
+  {tsid:"StClairSP.Stage.Inst.1Hour.0.noaa-rev", name:"St. Clair State Police", note:"Mid-river"},
+  {tsid:"Algonac.Stage.Inst.1Hour.0.noaa-rev", name:"Algonac", note:"Near Lake St. Clair"}
 ];
 async function loadUSACE(){
   const el = document.getElementById("usace");
   try{
-    const end = new Date(), begin = new Date(end.getTime()-12*3600*1000);
+    const end=new Date(), begin=new Date(end.getTime()-12*3600*1000);
     const data = await Promise.all(USACE_GAUGES.map(async g=>{
       try{
-        const u = `https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRE&name=${encodeURIComponent(g.tsid)}&begin=${begin.toISOString()}&end=${end.toISOString()}&page-size=500`;
-        const j = await (await fetch(u,{headers:{"Accept":"application/json;version=2"}})).json();
-        const vals = (j.values||[]).filter(v=>v[1]!=null);
-        if(!vals.length) return {g, v:null};
-        const last = vals[vals.length-1];
-        const prev = vals.length>3 ? vals[vals.length-4] : vals[0];
-        return {g, v:last[1], t:last[0], prev:prev[1], unit:j.units||"ft"};
-      }catch(e){ return {g, v:null}; }
+        const u=`https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRE&name=${encodeURIComponent(g.tsid)}&begin=${begin.toISOString()}&end=${end.toISOString()}&page-size=500`;
+        const j=await (await fetch(u,{headers:{"Accept":"application/json;version=2"}})).json();
+        const vals=(j.values||[]).filter(v=>v[1]!=null);
+        if(!vals.length) return {g,v:null};
+        const last=vals[vals.length-1], prev=vals.length>3?vals[vals.length-4]:vals[0];
+        return {g,v:last[1],t:last[0],prev:prev[1],unit:j.units||"ft"};
+      }catch(e){ return {g,v:null}; }
     }));
-    const got = data.filter(d=>d.v!=null);
-    if(!got.length){ el.innerHTML = `<div class="err">USACE gauge data unavailable. <a href="https://www.lre.usace.army.mil/Missions/Great-Lakes-Information/" target="_blank" rel="noopener">USACE Detroit District &#8599;</a></div>`; return; }
-    const stages = got.map(d=>d.v);
-    const mn = Math.min(...stages), mx = Math.max(...stages), span = (mx-mn)||1;
-    const head = data[0].v, mouth = data[data.length-1].v;
-    const fall = (head!=null && mouth!=null) ? (head-mouth) : null;
-    let rows = data.map(d=>{
-      if(d.v==null) return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"></div><div class="sg-val sg-muted muted">no data</div></div>`;
-      const w = 22 + Math.round((d.v-mn)/span*78);
-      let arr="&rarr;", cls="trend-flat";
-      if(d.prev!=null){ const dl=d.v-d.prev; if(dl>0.03){arr="&uarr;";cls="trend-up";} else if(dl<-0.03){arr="&darr;";cls="trend-dn";} }
-      return `<div class="stage-row">
-        <div class="sg-name">${d.g.name}<small>${d.g.note}</small></div>
-        <div class="sg-bar"><span style="width:${w}%"></span></div>
-        <div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div>
-      </div>`;
+    const got=data.filter(d=>d.v!=null);
+    if(!got.length){ el.innerHTML=`<div class="err">USACE gauge data unavailable. <a href="https://www.lre.usace.army.mil/Missions/Great-Lakes-Information/" target="_blank" rel="noopener">USACE Detroit District &#8599;</a></div>`; feedDown("usace"); return; }
+    const stages=got.map(d=>d.v), mn=Math.min(...stages), mx=Math.max(...stages), span=(mx-mn)||1;
+    const head=data[0].v, mouth=data[data.length-1].v, fall=(head!=null&&mouth!=null)?(head-mouth):null;
+    let rows=data.map(d=>{
+      if(d.v==null) return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"></div><div class="sg-val muted">no data</div></div>`;
+      const w=22+Math.round((d.v-mn)/span*78); let arr="&#8594;",cls="trend-flat";
+      if(d.prev!=null){const dl=d.v-d.prev; if(dl>0.03){arr="&#9650;";cls="trend-up";} else if(dl<-0.03){arr="&#9660;";cls="trend-dn";}}
+      return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"><span style="width:${w}%"></span></div><div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div></div>`;
     }).join("");
-    const fallTxt = fall!=null ? `<div class="fall-note">Head-to-mouth fall (Fort Gratiot &rarr; Algonac): <b>${fall.toFixed(2)} ft</b> &middot; IGLD 1985 datum &middot; values from USACE Detroit District (LRE), sourced from the NOAA/USACE connecting-channel gauge network.</div>` : "";
-    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &uarr; rising &middot; &darr; falling over last ~3 hr. <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
-    stamp("upd-usace");
-  }catch(e){ el.innerHTML = `<div class="err">USACE feed error (${e.message}).</div>`; }
+    const fallTxt = fall!=null?`<div class="fall-note">Head-to-mouth fall (Fort Gratiot &rarr; Algonac): <b>${fall.toFixed(2)} ft</b> &middot; IGLD 1985 datum &middot; USACE Detroit District (LRE).</div>`:"";
+    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &#9650; rising &middot; &#9660; falling (last ~3 hr). <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
+    stamp("upd-usace"); feedOK("usace");
+  }catch(e){ el.innerHTML=`<div class="err">USACE feed error (${e.message}).</div>`; feedDown("usace"); }
 }
 
-/* ===================== Marine Weather ===================== */
-const MARINE_ZONES = "LHZ443,LHZ464,LCZ422,LCZ460"; // Lk Huron nearshore+offshore @ Port Huron, St. Clair River, Lk St. Clair
+/* ============================================================
+   MARINE WEATHER
+   ============================================================ */
 async function loadMarine(){
-  const el = document.getElementById("marine");
+  const el=document.getElementById("marine");
   try{
-    let html = "";
-    // Active marine warnings/advisories
-    const al = await getJSON(`https://api.weather.gov/alerts/active?zone=${MARINE_ZONES}`, UA_HEADERS);
-    const feats = (al.features||[]).map(f=>f.properties);
-    if(feats.length){
-      html += feats.map(p=>{
-        const sev=p.severity||"Unknown";
-        return `<div class="alert sev-${sev}" style="margin-bottom:8px;"><div class="a-top"><span class="a-event">${p.event} <span class="badge b-${sev}">${sev}</span></span><span class="a-time">until ${fmtTime(p.expires||p.ends)}</span></div><div class="a-head">${(p.areaDesc||"").replace(/</g,"&lt;")}</div></div>`;
-      }).join("");
-    } else {
-      html += `<div class="all-clear" style="font-size:13px; margin-bottom:8px;"><span class="ring" style="width:20px;height:20px;border-width:2px;">&#10003;</span> No active marine warnings or advisories.</div>`;
-    }
-    // Nearshore marine forecast (Lake Huron, Port Sanilac to Port Huron)
+    let html="";
+    const al=await getJSON(`https://api.weather.gov/alerts/active?zone=${MARINE_ZONES}`, UA_HEADERS);
+    const feats=(al.features||[]).map(f=>f.properties);
+    if(feats.length){ html+=feats.map(p=>{const sev=p.severity||"Unknown"; return `<div class="alert sev-${sev}" style="margin-bottom:8px;"><div class="a-top"><span class="a-event">${p.event} <span class="badge b-${sev}">${sev}</span></span><span class="a-time">until ${fmtTime(p.expires||p.ends)}</span></div><div class="a-head">${(p.areaDesc||"").replace(/</g,"&lt;")}</div></div>`;}).join(""); }
+    else { html+=`<div class="all-clear" style="font-size:13px; margin-bottom:8px;"><span class="ring" style="width:20px;height:20px;border-width:2px;">&#10003;</span> No active marine warnings or advisories.</div>`; }
     try{
-      const list = await getJSON(`https://api.weather.gov/products/types/NSH/locations/DTX`, {Accept:"application/ld+json"});
+      const list=await getJSON(`https://api.weather.gov/products/types/NSH/locations/DTX`, {Accept:"application/ld+json"});
       if(list["@graph"] && list["@graph"].length){
-        const prod = await getJSON(list["@graph"][0]["@id"], {Accept:"application/ld+json"});
-        const seg = (prod.productText||"").split("$$").find(s=>/LHZ443/.test(s))||"";
+        const prod=await getJSON(list["@graph"][0]["@id"], {Accept:"application/ld+json"});
+        const seg=(prod.productText||"").split("$$").find(s=>/LHZ443/.test(s))||"";
         const periods=[]; const re=/\.([A-Z][A-Z .]+?)\.\.\.([\s\S]*?)(?=\n\.[A-Z]|\nSee |$)/g; let m;
         while((m=re.exec(seg))!==null){ periods.push({n:m[1].trim(), t:m[2].replace(/\s+/g," ").trim()}); }
-        if(periods.length){
-          html += `<div class="small muted" style="margin:4px 0 6px;">NWS Nearshore Forecast &mdash; Lake Huron, Port Sanilac to Port Huron:</div>`;
-          html += periods.slice(0,4).map(p=>`<div class="mar-period"><div class="mp-n">${p.n}</div><div class="mp-t">${p.t}</div></div>`).join("");
-        }
+        if(periods.length){ html+=`<div class="small muted" style="margin:4px 0 6px;">NWS Nearshore Forecast &mdash; Lake Huron, Port Sanilac to Port Huron:</div>`; html+=periods.slice(0,4).map(p=>`<div class="mar-period"><div class="mp-n">${p.n}</div><div class="mp-t">${p.t}</div></div>`).join(""); }
       }
     }catch(e){}
-    html += `<div class="small muted" style="margin-top:8px;">Waters: Lake Huron (Port Huron), St. Clair River, Lake St. Clair. <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">Full marine forecast &#8599;</a></div>`;
-    el.innerHTML = html;
-    stamp("upd-marine");
-  }catch(e){ el.innerHTML = `<div class="err">Marine data unavailable (${e.message}). <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">NWS marine &#8599;</a></div>`; }
+    html+=`<div class="small muted" style="margin-top:8px;">Waters: Lake Huron (Port Huron), St. Clair River, Lake St. Clair. <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">Full marine forecast &#8599;</a></div>`;
+    el.innerHTML=html; stamp("upd-marine"); feedOK("marine");
+  }catch(e){ el.innerHTML=`<div class="err">Marine data unavailable (${e.message}). <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">NWS marine &#8599;</a></div>`; feedDown("marine"); }
 }
 
-/* ===================== ESF Status Board ===================== */
-const ESF = [
-  ["ESF-1","Transportation","s-green"],["ESF-2","Communications","s-green"],
-  ["ESF-3","Public Works","s-green"],["ESF-4","Firefighting","s-green"],
-  ["ESF-5","Info &amp; Planning","s-green"],["ESF-6","Mass Care/Shelter","s-amber"],
-  ["ESF-7","Logistics","s-green"],["ESF-8","Public Health/Medical","s-amber"],
-  ["ESF-9","Search &amp; Rescue","s-green"],["ESF-10","HazMat","s-green"],
-  ["ESF-13","Public Safety","s-green"],["ESF-15","External Affairs","s-amber"]
-];
+/* ============================================================
+   MAP (Leaflet) — county, gauges, warning polygons
+   ============================================================ */
+let MAP=null, WARN_LAYER=null;
+function initMap(){
+  if(typeof L==="undefined"){ document.getElementById("map").innerHTML='<div class="err" style="padding:10px;">Map library offline. County + gauge coordinates still available via links.</div>'; feedDown("map"); return; }
+  MAP=L.map("map",{zoomControl:true, attributionControl:false}).setView([LAT,LON],9);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:18}).addTo(MAP);
+  L.circleMarker([LAT,LON],{radius:7,color:"#3da5ff",fillColor:"#3da5ff",fillOpacity:.9}).addTo(MAP).bindPopup("St. Clair County EOC / Port Huron");
+  USGS_SITES.forEach(s=>{ if(s.lat) L.circleMarker([s.lat,s.lon],{radius:6,color:"#2bb0e6",fillColor:"#0e1623",fillOpacity:.9,weight:2}).addTo(MAP).bindPopup(s.name+" (USGS "+s.id+")"); });
+  WARN_LAYER=L.layerGroup().addTo(MAP);
+  feedOK("map");
+}
+async function loadMapWarnings(){
+  if(!MAP || !WARN_LAYER) return;
+  try{
+    WARN_LAYER.clearLayers();
+    const d=await getJSON(`https://api.weather.gov/alerts/active?point=${LAT},${LON}`, UA_HEADERS);
+    let drew=0;
+    (d.features||[]).forEach(f=>{
+      if(f.geometry){ const sev=f.properties.severity; const col=sev==="Extreme"?"#c026d3":sev==="Severe"?"#ff4d4d":sev==="Moderate"?"#ff7a3d":"#ffb020";
+        L.geoJSON(f.geometry,{style:{color:col,weight:2,fillColor:col,fillOpacity:.15}}).bindPopup(`<b>${f.properties.event}</b><br>${(f.properties.headline||"").replace(/</g,"&lt;")}`).addTo(WARN_LAYER); drew++; }
+    });
+    stamp("upd-map");
+  }catch(e){}
+}
+
+/* ============================================================
+   ESF STATUS BOARD (click to cycle, saved locally)
+   ============================================================ */
+const ESF_CYCLE={"s-green":"s-amber","s-amber":"s-red","s-red":"s-green"};
+const ESF_LABEL={"s-green":"Ready","s-amber":"Elevated","s-red":"Activated"};
 function renderESF(){
-  document.getElementById("esf").innerHTML = ESF.map(([n,t,s])=>{
-    const label = s==="s-green"?"Ready":s==="s-amber"?"Elevated":"Activated";
-    return `<div class="esf-item"><div class="e-n">${n}</div><div class="e-t">${t}</div><span class="status-pill ${s}">${label}</span></div>`;
+  document.getElementById("esf").innerHTML = CFG.esf.map((row,i)=>{
+    const [n,t,s]=row;
+    return `<div class="esf-item"><div class="e-n">${n}</div><div class="e-t">${t}</div><span class="status-pill ${s}" onclick="cycleESF(${i})" title="Click to change">${ESF_LABEL[s]}</span></div>`;
   }).join("");
 }
+function cycleESF(i){ CFG.esf[i][2]=ESF_CYCLE[CFG.esf[i][2]]||"s-green"; saveCfg(); renderESF(); }
 
-/* ===================== Resource Links ===================== */
+/* ============================================================
+   RESOURCE LINKS
+   ============================================================ */
 const LINKS = [
   ["Weather","NWS Detroit/Pontiac","Watches, warnings, briefings","https://www.weather.gov/dtx/"],
   ["Weather","NWS Storm Prediction Center","Severe/convective outlooks","https://www.spc.noaa.gov/"],
   ["Roads","MDOT Mi Drive","Live traffic, closures, cameras","https://mdotjboss.state.mi.us/MiDrive/map"],
-  ["Power","DTE Energy Outage Map","Electric outages &amp; restoration","https://outage.dteenergy.com/"],
+  ["Power","DTE Energy Outage Map","Electric outages & restoration","https://outage.dteenergy.com/"],
   ["Power","SmartHub / Mich. Outage","Statewide outage view","https://poweroutage.us/area/state/michigan"],
-  ["Flood","NWS AHPS River Levels","Flood stage &amp; forecasts","https://water.noaa.gov/wfo/DTX"],
-  ["HazMat","EPA Response / ERNS","Spills &amp; releases","https://response.epa.gov/"],
-  ["Air","AirNow AQI","Air quality &amp; smoke","https://www.airnow.gov/?city=Port%20Huron&state=MI&country=USA"],
+  ["Flood","NWS AHPS River Levels","Flood stage & forecasts","https://water.noaa.gov/wfo/DTX"],
+  ["HazMat","EPA Response / ERNS","Spills & releases","https://response.epa.gov/"],
+  ["Air","AirNow AQI","Air quality & smoke","https://www.airnow.gov/?city=Port%20Huron&state=MI&country=USA"],
   ["State","MI State Police / EMHSD","State emergency management","https://www.michigan.gov/msp/divisions/emhsd"],
-  ["State","MI 211","Community resources &amp; shelter","https://www.mi211.org/"],
-  ["Federal","FEMA Region 5","Declarations &amp; recovery","https://www.fema.gov/locations/region-5"],
+  ["State","MI 211","Community resources & shelter","https://www.mi211.org/"],
+  ["Federal","FEMA Region 5","Declarations & recovery","https://www.fema.gov/locations/region-5"],
   ["Health","St. Clair County Health Dept.","Public health alerts","https://www.scchealth.co/"],
   ["Border","CBP / Blue Water Bridge","Border crossing status","https://bwt.cbp.gov/"],
   ["Marine","USCG Sector Detroit","Great Lakes marine safety","https://www.news.uscg.mil/"],
   ["Recovery","Red Cross Shelters","Open shelters map","https://www.redcross.org/get-help/disaster-relief-and-recovery-services/find-an-open-shelter.html"],
-  ["County","St. Clair County Homeland Security/EM","Local EM &amp; alerts","https://www.stclaircounty.org/Offices/homeland/"]
+  ["County","St. Clair County Homeland Security/EM","Local EM & alerts","https://www.stclaircounty.org/Offices/homeland/"]
 ];
-function renderLinks(){
-  document.getElementById("links").innerHTML = LINKS.map(([c,t,d,u])=>
-    `<a class="lnk" href="${u}" target="_blank" rel="noopener"><span class="cat">${c}</span><span class="lt">${t}</span><span class="ld">${d}</span></a>`).join("");
+function renderLinks(){ document.getElementById("links").innerHTML = LINKS.map(([c,t,d,u])=>`<a class="lnk" href="${u}" target="_blank" rel="noopener"><span class="cat">${c}</span><span class="lt">${t}</span><span class="ld">${d}</span></a>`).join(""); }
+
+/* ============================================================
+   ACTIVATION BANNER
+   ============================================================ */
+function renderActivation(){
+  const a=CFG.activation, cls={"NORMAL":"","ENHANCED MONITORING":"amber","PARTIAL ACTIVATION":"orange","FULL ACTIVATION":"red"}[a.level]||"amber";
+  const banner=document.getElementById("activation"); banner.className="activation "+cls;
+  document.getElementById("act-lvl").textContent=a.level;
+  document.getElementById("act-state").textContent=a.state||"—";
+  document.getElementById("act-note").textContent=a.note||"";
 }
 
-/* ===================== Radar cache-bust ===================== */
-function bustRadar(){ document.getElementById("radar").src = "https://radar.weather.gov/ridge/standard/KDTX_loop.gif?t="+Date.now(); }
+/* ============================================================
+   SETTINGS DRAWER
+   ============================================================ */
+function openDrawer(){
+  document.getElementById("set-act-level").value=CFG.activation.level;
+  document.getElementById("set-act-state").value=CFG.activation.state;
+  document.getElementById("set-act-note").value=CFG.activation.note;
+  document.getElementById("set-reload").value=CFG.reloadHours;
+  document.getElementById("set-chime").checked=!!CFG.chime;
+  document.getElementById("set-wake").checked=!!CFG.wake;
+  document.getElementById("esf-editor").innerHTML = CFG.esf.map((row,i)=>`<div class="esf-edit"><span>${row[0]} ${row[1]}</span><select data-esf="${i}"><option value="s-green"${row[2]==="s-green"?" selected":""}>Ready</option><option value="s-amber"${row[2]==="s-amber"?" selected":""}>Elevated</option><option value="s-red"${row[2]==="s-red"?" selected":""}>Activated</option></select></div>`).join("");
+  document.getElementById("thresh-editor").innerHTML = USGS_SITES.map(s=>{
+    const t=(CFG.thresholds[s.id]||{});
+    return `<div style="margin-bottom:8px;"><div class="small" style="font-weight:600;">${s.name} <span class="muted">(${s.id})</span></div>
+      <div class="row4"><input data-th="${s.id}.action" type="number" step="0.1" placeholder="action" value="${t.action??""}"><input data-th="${s.id}.minor" type="number" step="0.1" placeholder="minor" value="${t.minor??""}"><input data-th="${s.id}.moderate" type="number" step="0.1" placeholder="moderate" value="${t.moderate??""}"><input data-th="${s.id}.major" type="number" step="0.1" placeholder="major" value="${t.major??""}"></div></div>`;
+  }).join("");
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("drawer-mask").classList.add("open");
+}
+function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawer-mask").classList.remove("open"); }
+function saveSettings(){
+  CFG.activation.level=document.getElementById("set-act-level").value;
+  CFG.activation.state=document.getElementById("set-act-state").value;
+  CFG.activation.note=document.getElementById("set-act-note").value;
+  CFG.reloadHours=Math.max(1,parseInt(document.getElementById("set-reload").value)||6);
+  CFG.chime=document.getElementById("set-chime").checked;
+  CFG.wake=document.getElementById("set-wake").checked;
+  document.querySelectorAll("[data-esf]").forEach(sel=>{ CFG.esf[+sel.dataset.esf][2]=sel.value; });
+  document.querySelectorAll("[data-th]").forEach(inp=>{ const [sid,key]=inp.dataset.th.split("."); CFG.thresholds[sid]=CFG.thresholds[sid]||{}; CFG.thresholds[sid][key]= inp.value===""?null:parseFloat(inp.value); });
+  saveCfg(); renderActivation(); renderESF(); updateStatusStrip(); loadWater(); applyWake(); scheduleReload(); closeDrawer();
+}
+function resetSettings(){ if(!confirm("Reset all dashboard settings to defaults?")) return; CFG=structuredClone(DEFAULTS); saveCfg(); renderActivation(); renderESF(); updateStatusStrip(); loadWater(); closeDrawer(); }
 
-/* ===================== Orchestration ===================== */
+/* ============================================================
+   THEME + KIOSK
+   ============================================================ */
+function applyTheme(){ document.body.classList.toggle("light", CFG.theme==="light"); }
+function toggleTheme(){ CFG.theme = CFG.theme==="light"?"dark":"light"; saveCfg(); applyTheme(); }
+function applyKiosk(){ document.body.classList.toggle("kiosk", !!CFG.kiosk); document.getElementById("btn-kiosk").classList.toggle("on", !!CFG.kiosk); if(MAP) setTimeout(()=>MAP.invalidateSize(),300); }
+function toggleKiosk(){ CFG.kiosk=!CFG.kiosk; saveCfg(); applyKiosk(); }
+
+/* ============================================================
+   SITREP (printable daily status report from live data)
+   ============================================================ */
+function genSITREP(){
+  const now=new Date().toLocaleString("en-US",{timeZone:"America/Detroit"});
+  const a=CFG.activation;
+  const alerts = LAST_ALERTS.length ? LAST_ALERTS.map(p=>`<li><b>${p.event}</b> (${p.severity}) — ${(p.headline||p.areaDesc||"").replace(/</g,"&lt;")} <i>until ${fmtTime(p.expires||p.ends)}</i></li>`).join("") : "<li>No active NWS warnings, watches, or advisories.</li>";
+  const esf = CFG.esf.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${ESF_LABEL[r[2]]}</td></tr>`).join("");
+  const cond = document.getElementById("conditions").innerText.replace(/\n+/g," • ");
+  const hwo = document.getElementById("hwo").innerText.slice(0,1200);
+  const win=window.open("","_blank");
+  win.document.write(`<html><head><title>SCC EOC Daily SITREP — ${now}</title>
+  <style>body{font-family:Segoe UI,Arial,sans-serif;max-width:820px;margin:24px auto;color:#111;line-height:1.5;}
+  h1{font-size:20px;margin:0;} h2{font-size:14px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #333;padding-bottom:3px;margin-top:22px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;} td,th{border:1px solid #999;padding:5px 8px;text-align:left;}
+  .meta{color:#555;font-size:12px;} ul{margin:6px 0;} .box{border:1px solid #999;padding:10px;border-radius:6px;background:#f6f8fb;}
+  @media print{.noprint{display:none;}}</style></head><body>
+  <div class="noprint" style="text-align:right;"><button onclick="window.print()">Print / Save PDF</button></div>
+  <h1>St. Clair County EOC — Daily Situation Report</h1>
+  <div class="meta">Generated ${now} ET &middot; Unofficial situational-awareness summary</div>
+  <h2>1. EOC Posture</h2><div class="box"><b>${a.level}</b> — ${a.state}<br>${a.note||""}</div>
+  <h2>2. Active Warnings & Hazards</h2><ul>${alerts}</ul>
+  <h2>3. Current Conditions</h2><div class="box">${cond}</div>
+  <h2>4. Hazardous Weather Outlook</h2><div class="box" style="white-space:pre-wrap;font-size:12px;">${hwo.replace(/</g,"&lt;")}</div>
+  <h2>5. ESF Readiness</h2><table><tr><th>ESF</th><th>Function</th><th>Status</th></tr>${esf}</table>
+  <h2>6. Notes / Action Items</h2><div class="box" style="min-height:80px;">&nbsp;</div>
+  <p class="meta">Confirm all life-safety decisions against official NWS and emergency-management channels.</p>
+  </body></html>`);
+  win.document.close();
+}
+
+/* ============================================================
+   UNATTENDED OPERATION
+   ============================================================ */
+let LAST_SUCCESS=Date.now();
+function markSuccess(){ LAST_SUCCESS=Date.now(); }
+let wakeLock=null;
+async function applyWake(){
+  try{
+    if(CFG.wake && "wakeLock" in navigator){ wakeLock = await navigator.wakeLock.request("screen"); }
+    else if(wakeLock){ await wakeLock.release(); wakeLock=null; }
+  }catch(e){}
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ applyWake(); } });
+window.addEventListener("offline", ()=>document.body.classList.add("is-offline"));
+window.addEventListener("online", ()=>{ document.body.classList.remove("is-offline"); refreshAll(); });
+let reloadTimer=null;
+function scheduleReload(){ if(reloadTimer) clearTimeout(reloadTimer); reloadTimer=setTimeout(()=>location.reload(), Math.max(1,CFG.reloadHours)*3600*1000); }
+// Watchdog: if no successful feed for 20 min, reload to self-heal
+setInterval(()=>{ if(Date.now()-LAST_SUCCESS > 20*60*1000){ location.reload(); } }, 60*1000);
+
+/* ============================================================
+   ORCHESTRATION
+   ============================================================ */
+function bustRadar(){ document.getElementById("radar").src="https://radar.weather.gov/ridge/standard/KDTX_loop.gif?t="+Date.now(); }
 function refreshAll(){
-  loadAlerts(); loadConditions(); loadForecast(); loadHWO(); loadWater(); loadUSACE(); loadMarine(); loadQuakes(); bustRadar();
-  document.getElementById("last-refresh").textContent =
-    new Date().toLocaleTimeString("en-US",{timeZone:"America/Detroit"}) + " ET";
+  loadAlerts(); loadConditions(); loadForecast(); loadHWO(); loadWater(); loadUSACE(); loadMarine(); loadQuakes(); loadMapWarnings(); bustRadar();
+  document.getElementById("last-refresh").textContent = new Date().toLocaleTimeString("en-US",{timeZone:"America/Detroit"}) + " ET";
 }
-renderESF(); renderLinks(); refreshAll();
-setInterval(refreshAll, 5*60*1000); // 5 min
+applyTheme(); applyKiosk(); renderActivation(); renderESF(); renderLinks(); updateStatusStrip();
+initMap(); refreshAll(); applyWake(); scheduleReload();
+setInterval(refreshAll, 5*60*1000);
 </script>
 </body>
 </html>
