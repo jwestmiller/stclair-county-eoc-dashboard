@@ -739,6 +739,23 @@ const USACE_GAUGES = [
   {tsid:"StClairSP.Stage.Inst.1Hour.0.noaa-rev", name:"St. Clair State Police", note:"Mid-river"},
   {tsid:"Algonac.Stage.Inst.1Hour.0.noaa-rev", name:"Algonac", note:"Near Lake St. Clair"}
 ];
+// Official flood-stage levels (ft, IGLD 1985) provided by SCC EOC.
+const USACE_FLOOD = {
+  "St. Clair State Police": {minor:578.77, alert:579.30, major:579.99},
+  "Algonac":                {minor:577.33, alert:578.02, major:578.22}
+};
+function usaceFlood(name, v){
+  const t = USACE_FLOOD[name];
+  if(!t || v==null) return "";
+  let cat="Below minor stage", cls="fs-normal";
+  if(v>=t.major){cat="MAJOR FLOOD STAGE"; cls="fs-major";}
+  else if(v>=t.alert){cat="ALERT STAGE"; cls="fs-moderate";}
+  else if(v>=t.minor){cat="MINOR FLOOD STAGE"; cls="fs-minor";}
+  const ladder=[["minor",t.minor],["alert",t.alert],["major",t.major]];
+  const next=ladder.find(x=>v<x[1]);
+  const dist = next ? `${(next[1]-v).toFixed(2)} ft below ${next[0]} stage` : "above major stage";
+  return `<div class="fstage ${cls}">${cat} &middot; ${dist}</div>`;
+}
 async function loadUSACE(){
   const el = document.getElementById("usace");
   try{
@@ -761,10 +778,10 @@ async function loadUSACE(){
       if(d.v==null) return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"></div><div class="sg-val muted">no data</div></div>`;
       const w=22+Math.round((d.v-mn)/span*78); let arr="&#8594;",cls="trend-flat";
       if(d.prev!=null){const dl=d.v-d.prev; if(dl>0.03){arr="&#9650;";cls="trend-up";} else if(dl<-0.03){arr="&#9660;";cls="trend-dn";}}
-      return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"><span style="width:${w}%"></span></div><div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div></div>`;
+      return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small>${usaceFlood(d.g.name,d.v)}</div><div class="sg-bar"><span style="width:${w}%"></span></div><div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div></div>`;
     }).join("");
     const fallTxt = fall!=null?`<div class="fall-note">Head-to-mouth fall (Fort Gratiot &rarr; Algonac): <b>${fall.toFixed(2)} ft</b> &middot; IGLD 1985 datum &middot; USACE Detroit District (LRE).</div>`:"";
-    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &#9650; rising &middot; &#9660; falling (last ~3 hr). <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
+    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &#9650; rising &middot; &#9660; falling (last ~3 hr). Flood stages set for St. Clair (Minor 578.77 / Alert 579.30 / Major 579.99) and Algonac (Minor 577.33 / Alert 578.02 / Major 578.22). <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
     stamp("upd-usace"); feedOK("usace");
   }catch(e){ el.innerHTML=`<div class="err">USACE feed error (${e.message}).</div>`; feedDown("usace"); }
 }
