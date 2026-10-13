@@ -261,6 +261,25 @@ header,.feedhealth,.offline,.btn,#map,.drawer,.drawer-mask,.statusstrip .ss-cell
 body{background:#fff; color:#000;}
 .card{break-inside:avoid; box-shadow:none; border:1px solid #999;}
 }
+
+.alert.new{outline:1px solid var(--accent);outline-offset:1px}.b-New{background:var(--accent2);color:#fff}
+.alert.new.sev-Severe{outline-color:var(--sev)}.alert.new.sev-Extreme{outline-color:var(--ext)}
+.s-unverified{background:var(--panel);color:var(--muted);border:1px dashed var(--muted)}
+.ops-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}.ops-nav a{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.ops-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.ops-item{padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
+.ops-item h3{margin:0 0 8px;font-size:14px}.ops-item p{margin:6px 0;white-space:pre-wrap}.ops-value{font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere}.ops-meta{font-size:11px;color:var(--muted);margin-top:6px}
+.ops-summary{margin-bottom:16px}.ops-banner{margin-bottom:12px;font-size:12px;color:var(--muted)}
+section[id]{scroll-margin-top:150px}.fh.partial .d{background:var(--warn)}.fh .tm{white-space:normal}
+dialog.ops-dialog{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(720px,94vw);max-height:90vh;overflow:auto;padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.65)}.ops-dialog label{display:block;margin:12px 0 4px;font-size:13px}.ops-dialog input,.ops-dialog textarea,.ops-dialog select{display:block;width:100%;padding:9px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;font:inherit}.ops-dialog textarea{min-height:65px}.ops-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.ops-error{color:var(--warn);white-space:pre-wrap}.ops-dialog fieldset{border:1px solid var(--line);margin:16px 0}.ops-log{max-height:220px;overflow:auto;font-size:12px}.ops-log li{margin-bottom:8px}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+details{font-size:12px;margin-top:8px}summary{cursor:pointer}details p{white-space:pre-wrap} .activation .note{flex-basis:100%}
+@media(max-width:750px){.ops-grid{grid-template-columns:1fr}.ss-cell{padding:8px 12px;min-width:100px}.ss-posture .v{font-size:12px}header{position:static}.wrap{padding:12px}section[id]{scroll-margin-top:12px}.ops-actions .btn{flex:1}table{font-size:11px}th,td{padding:6px 4px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media print{.ops-nav,.ops-actions{display:none!important}.ops-grid{grid-template-columns:1fr 1fr}.ops-item{break-inside:avoid}}
+
+
+.activation.unverified{background:var(--panel);border-bottom-color:var(--line)}.activation.unverified .lvl{background:var(--panel2);color:var(--muted);border:1px dashed var(--muted)}
 </style>
 </head>
 <body>
@@ -291,9 +310,9 @@ body{background:#fff; color:#000;}
 <!-- Top status strip -->
 <div class="statusstrip" id="statusstrip">
 <div class="ss-cell ss-posture"><span class="k">EOC Posture</span><span class="v p-normal" id="ss-posture">&mdash;</span></div>
-<div class="ss-cell ss-count"><span class="k">Active Warnings</span><span class="v" id="ss-count">&mdash;</span></div>
+<div class="ss-cell ss-count"><span class="k">Active alerts</span><span class="v" id="ss-count">&mdash;</span></div>
 <div class="ss-cell ss-worst"><span class="k">Highest Severity</span><span class="v wNone" id="ss-worst">&mdash;</span></div>
-<div class="ss-cell big"><span class="k">Top Priority Now</span><span class="v" id="ss-priority">Loading situational picture&hellip;</span></div>
+<div class="ss-cell big"><span class="k">Monitoring priority</span><span class="v" id="ss-priority">Loading situational picture&hellip;</span></div>
 </div>
 
 <!-- Feed health -->
@@ -305,7 +324,7 @@ body{background:#fff; color:#000;}
 <!-- EOC Activation banner (edit via Settings) -->
 <div class="activation" id="activation">
 <span class="lvl" id="act-lvl">&mdash;</span>
-<span>EOC Activation Level &mdash; <b id="act-state">&mdash;</b></span>
+<span>Declared activation &mdash; <b id="act-state">&mdash;</b></span>
 <span class="note" id="act-note"></span>
 </div>
 
@@ -313,7 +332,7 @@ body{background:#fff; color:#000;}
 <div class="grid">
 
 <section class="card col-8" id="card-alerts">
-<h2><span>Active Weather &amp; Hazard Warnings <span class="dot live"></span></span><span class="upd" id="upd-alerts"></span></h2>
+<h2><span>Active Weather &amp; Hazard Alerts <span class="dot live"></span></span><span class="upd" id="upd-alerts"></span></h2>
 <div class="body" id="alerts"><div class="loading">Loading active alerts from the National Weather Service&hellip;</div></div>
 </section>
 
@@ -366,10 +385,10 @@ body{background:#fff; color:#000;}
 </section>
 
 <section class="card col-6">
-<h2><span>Response &amp; Recovery &mdash; ESF Status Board</span><span class="upd">click a pill to change</span></h2>
+<h2><span>Response &amp; Recovery &mdash; ESF Status Board</span><span class="upd">verify / update status</span></h2>
 <div class="body">
 <div class="esf" id="esf"></div>
-<div class="small muted" style="margin-top:10px;">Click any status pill to cycle <b>Ready &rarr; Elevated &rarr; Activated</b>. Changes save in this browser &mdash; no login needed.</div>
+<div class="small muted" style="margin-top:10px;">Click any status pill to verify <b>Not verified / Ready / Elevated / Activated</b>. Each update records an agency, confirmation time, and needs. Local edits apply only to this browser unless shared operations is connected.</div>
 </div>
 </section>
 
@@ -387,7 +406,7 @@ St. Clair County EOC All-Hazards Dashboard &middot; Live data from
 <a href="https://waterdata.usgs.gov" target="_blank" rel="noopener">USGS</a>, and
 <a href="https://tidesandcurrents.noaa.gov" target="_blank" rel="noopener">NOAA</a>.
 Unofficial situational-awareness aid &mdash; always confirm life-safety decisions against official NWS/EM channels.
-<br>Auto-refreshes every 5 min &middot; auto-reloads unattended. Last full refresh: <span id="last-refresh">&mdash;</span>
+<br>Auto-refreshes every 5 min &middot; auto-reloads unattended. Last refresh requested: <span id="last-refresh">&mdash;</span>
 </footer>
 
 <!-- Settings drawer -->
@@ -399,7 +418,7 @@ Unofficial situational-awareness aid &mdash; always confirm life-safety decision
 <h4>EOC Activation</h4>
 <label>Posture level</label>
 <select id="set-act-level">
-<option value="NORMAL">NORMAL / MONITORING (green)</option>
+<option value="UNVERIFIED">Not verified</option><option value="NORMAL">NORMAL / MONITORING (green)</option>
 <option value="ENHANCED MONITORING">ENHANCED MONITORING (amber)</option>
 <option value="PARTIAL ACTIVATION">PARTIAL ACTIVATION (orange)</option>
 <option value="FULL ACTIVATION">FULL ACTIVATION (red)</option>
@@ -418,7 +437,7 @@ Unofficial situational-awareness aid &mdash; always confirm life-safety decision
 
 <div class="sec">
 <h4>River Flood-Stage Thresholds (ft)</h4>
-<div class="hint" style="margin-bottom:6px;">Verify official values on NWS AHPS for each gauge, then enter here. Leave blank if a gauge has no defined flood stage (e.g., Great Lakes connecting channels).</div>
+<div class="hint" style="margin-bottom:6px;">Verify official values on NWS National Water Prediction Service for each gauge, then enter here. Leave blank if a gauge has no defined flood stage (e.g., Great Lakes connecting channels).</div>
 <div id="thresh-editor"></div>
 </div>
 
@@ -453,16 +472,16 @@ const USGS_SITES = [
 const NOAA_WL_STATION = "9014090";                // Mouth of Black River
 
 const DEFAULTS = {
-  activation: { level:"ENHANCED MONITORING", state:"Routine Monitoring", note:"EOC monitoring conditions. Dashboard auto-refreshes every 5 minutes." },
+  activation: { level:"UNVERIFIED", state:"", note:"Activation has not been confirmed by an authorized EOC representative." },
   esf: [
-    ["ESF-1","Transportation","s-green"],["ESF-2","Communications","s-green"],
-    ["ESF-3","Public Works","s-green"],["ESF-4","Firefighting","s-green"],
-    ["ESF-5","Info & Planning","s-green"],["ESF-6","Mass Care/Shelter","s-green"],
-    ["ESF-7","Logistics","s-green"],["ESF-8","Public Health/Medical","s-green"],
-    ["ESF-9","Search & Rescue","s-green"],["ESF-10","HazMat","s-green"],
-    ["ESF-13","Public Safety","s-green"],["ESF-15","External Affairs","s-green"]
+    ["ESF-1","Transportation","s-unverified"],["ESF-2","Communications","s-unverified"],
+    ["ESF-3","Public Works","s-unverified"],["ESF-4","Firefighting","s-unverified"],
+    ["ESF-5","Info & Planning","s-unverified"],["ESF-6","Mass Care/Shelter","s-unverified"],
+    ["ESF-7","Logistics","s-unverified"],["ESF-8","Public Health/Medical","s-unverified"],
+    ["ESF-9","Search & Rescue","s-unverified"],["ESF-10","HazMat","s-unverified"],
+    ["ESF-13","Public Safety","s-unverified"],["ESF-15","External Affairs","s-unverified"]
   ],
-  thresholds: {   // ft; null = not defined. VERIFY on NWS AHPS before relying on these.
+  thresholds: {   // ft; null = not defined. VERIFY on NWS National Water Prediction Service before relying on these.
     "04159130": { action:null, minor:null, moderate:null, major:null },
     "04160600": { action:null, minor:null, moderate:null, major:null }
   },
@@ -493,22 +512,13 @@ setInterval(tickClock,1000); tickClock();
 function nowET(){ return new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",timeZone:"America/Detroit"}); }
 function stamp(id){ const e=document.getElementById(id); if(e) e.textContent = "updated "+nowET(); }
 function fmtTime(iso){ try{ return new Date(iso).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"America/Detroit"});}catch(e){return "";} }
-async function getJSON(url, headers){ const r = await fetch(url,{headers:headers||{}}); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
+async function getJSON(url, headers){ const r = await fetch(url,{headers:headers||{},signal:AbortSignal.timeout(25000)}); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
 
 /* ============================================================
    FEED HEALTH
    ============================================================ */
 const FEEDS = { alerts:"Alerts", conditions:"Obs", forecast:"Forecast", hwo:"HWO", water:"Water", usace:"USACE", marine:"Marine", quakes:"Quakes", map:"Map" };
 const feedState = {};
-function renderFeedHealth(){
-  const el = document.getElementById("feedhealth");
-  el.innerHTML = `<span class="fh-lbl">Feeds</span>` + Object.keys(FEEDS).map(k=>{
-    const s = feedState[k] || {st:"wait"};
-    return `<span class="fh ${s.st}"><span class="d"></span><span class="nm">${FEEDS[k]}</span>${s.t?`<span class="tm">${s.t}</span>`:""}</span>`;
-  }).join("");
-}
-function feedOK(k){ feedState[k]={st:"ok", t:nowET()}; renderFeedHealth(); markSuccess(); }
-function feedDown(k){ feedState[k]={st:"down", t:nowET()}; renderFeedHealth(); }
 renderFeedHealth();
 
 /* ============================================================
@@ -526,7 +536,8 @@ async function loadAlerts(){
     const d = await getJSON(`https://api.weather.gov/alerts/active?zone=${ZONES},${MARINE_ZONES}`, UA_HEADERS);
     let feats = (d.features||[]).map(f=>f.properties);
     const seen0=new Set(); feats=feats.filter(p=>{const k=p.event+"|"+(p.areaDesc||"");if(seen0.has(k))return false;seen0.add(k);return true;});
-    feats.sort((a,b)=>(SEV_ORDER[a.severity]??9)-(SEV_ORDER[b.severity]??9));
+    feats = feats.filter(p=>!p.expires || Date.parse(p.expires)>Date.now());
+    feats.sort((a,b)=>(SEV_ORDER[a.severity]??9)-(SEV_ORDER[b.severity]??9) || Number(isRegional(a))-Number(isRegional(b)));
     LAST_ALERTS = feats;
 
     // New-alert detection
@@ -547,34 +558,18 @@ async function loadAlerts(){
         const newTag = p.__new ? ` <span class="badge b-New">&#9733; New</span>` : "";
         return `<div class="alert sev-${sev}${isMarine?' marine':''}${p.__new?' new':''}">
           <div class="a-top">
-            <span class="a-event">${p.event||"Alert"} <span class="badge b-${sev}">${sev}</span>${marineTag}${newTag}</span>
+            <span class="a-event">${escapeHTML(p.event||"Alert")} <span class="badge b-${sev}">${sev}</span>${marineTag}${newTag}</span>
             <span class="a-time">until ${fmtTime(p.expires||p.ends)}</span>
           </div>
-          <div class="a-head">${(p.headline||p.areaDesc||"").replace(/</g,"&lt;")}</div>
+          <div class="a-head">${escapeHTML(localArea(p))}</div>
+          <details><summary>Coverage, impacts, and instructions</summary><p>${escapeHTML(p.areaDesc||"")}</p><p>${escapeHTML(p.headline||"")}</p><p>${escapeHTML(p.description||"")}</p><p><b>Instructions:</b> ${escapeHTML(p.instruction||"Consult the issuing agency.")}</p></details>
         </div>`;
       }).join("");
     }
-    if(anyNew && feats.length){ document.getElementById("card-alerts").classList.add("flash"); setTimeout(()=>document.getElementById("card-alerts").classList.remove("flash"),4200); if(CFG.chime) chime(); }
+    if(anyNew && feats.some(p=>p.__new && ["Severe","Extreme"].includes(p.severity))){ document.getElementById("card-alerts").classList.add("flash"); setTimeout(()=>document.getElementById("card-alerts").classList.remove("flash"),4200); if(CFG.chime) chime(); }
     updateStatusStrip();
-    stamp("upd-alerts"); feedOK("alerts");
+    stamp("upd-alerts"); feedOK("alerts"); updateStatusStrip();
   }catch(e){ el.innerHTML = `<div class="err">Could not load alerts (${e.message}). <a href="https://forecast.weather.gov/MapClick.php?zoneid=MIZ063" target="_blank" rel="noopener">Open NWS zone page &#8599;</a></div>`; feedDown("alerts"); }
-}
-
-function updateStatusStrip(){
-  const feats = LAST_ALERTS;
-  const worstIdx = feats.length ? Math.min(...feats.map(p=>SEV_ORDER[p.severity]??4)) : 4;
-  const worst = SEV_NAME[Math.min(worstIdx,4)];
-  document.getElementById("ss-count").textContent = feats.length;
-  const wEl = document.getElementById("ss-worst");
-  wEl.textContent = feats.length ? worst : "None";
-  wEl.className = "v w"+(feats.length?worst:"None");
-  const pri = document.getElementById("ss-priority");
-  if(feats.length){ pri.textContent = (feats[0].event||"Alert") + " — " + (feats[0].headline||feats[0].areaDesc||"").replace(/</g,"&lt;"); }
-  else { pri.textContent = "No active warnings. Routine all-hazards monitoring."; }
-  // posture from activation level
-  const map = {"NORMAL":["NORMAL","p-normal"],"ENHANCED MONITORING":["ENHANCED","p-enhanced"],"PARTIAL ACTIVATION":["PARTIAL","p-partial"],"FULL ACTIVATION":["FULL","p-full"]};
-  const m = map[CFG.activation.level] || ["ENHANCED","p-enhanced"];
-  const pEl = document.getElementById("ss-posture"); pEl.textContent = m[0]; pEl.className = "v "+m[1];
 }
 
 /* simple WebAudio chime */
@@ -613,18 +608,19 @@ async function loadConditions(){
         <div>Wind ${wsp==null?"&mdash;":wsp+" mph"} &middot; Humidity ${o.relativeHumidity.value!=null?Math.round(o.relativeHumidity.value)+"%":"&mdash;"}</div>
         <div class="small">Obs: ${station} &middot; ${fmtTime(o.timestamp)}</div>
       </div></div>${heatPill(hi)}`;
-    stamp("upd-cond"); feedOK("conditions");
+    stamp("upd-cond"); feedOK("conditions", o.timestamp, 60);
   }catch(e){ el.innerHTML = `<div class="err">Observations unavailable (${e.message}).</div>`; feedDown("conditions"); }
 }
 async function loadForecast(){
   const el = document.getElementById("forecast");
   try{
     const p = await getPoint();
-    const fc = (await getJSON(p.forecast, UA_HEADERS)).properties.periods.slice(0,7);
+    const forecastData = (await getJSON(p.forecast, UA_HEADERS)).properties;
+    const fc = forecastData.periods.slice(0,7);
     el.innerHTML = `<div class="fc-row">` + fc.map(pr=>`
       <div class="fc"><div class="nm">${pr.name}</div><div class="tm">${pr.temperature}&deg;</div>
       <div class="ds">${pr.shortForecast}</div><div class="wind">${pr.windSpeed||""} ${pr.windDirection||""}</div></div>`).join("") + `</div>`;
-    stamp("upd-fc"); feedOK("forecast");
+    stamp("upd-fc"); feedOK("forecast", forecastData.updateTime, 360);
   }catch(e){ el.innerHTML = `<div class="err">Forecast unavailable (${e.message}).</div>`; feedDown("forecast"); }
 }
 
@@ -642,7 +638,7 @@ async function loadHWO(){
     if(idx>0) txt = txt.slice(idx);
     txt = txt.split("\n").filter(l=>l.trim()!=="").slice(0,18).join("\n");
     el.innerHTML = `<pre style="white-space:pre-wrap; font-size:12px; color:var(--text); opacity:.9; margin:0; font-family:inherit;">${txt.replace(/</g,"&lt;")}</pre>`;
-    stamp("upd-hwo"); feedOK("hwo");
+    stamp("upd-hwo"); feedOK("hwo", prod.issuanceTime, 1440);
   }catch(e){ el.innerHTML = `<div class="err">Outlook unavailable (${e.message}). <a href="https://forecast.weather.gov/product.php?site=DTX&issuedby=DTX&product=HWO" target="_blank" rel="noopener">Open HWO &#8599;</a></div>`; feedDown("hwo"); }
 }
 
@@ -657,8 +653,8 @@ function sparkline(vals){
 }
 function floodContext(siteId, gh){
   const t = (CFG.thresholds && CFG.thresholds[siteId]) || {};
-  if(gh==null || (t.action==null && t.minor==null && t.moderate==null && t.major==null))
-    return `<div class="fstage fs-none">No flood stage set &middot; edit in Settings</div>`;
+  if(!t.source || !t.verifiedAt || !t.datumMatches || gh==null || (t.action==null && t.minor==null && t.moderate==null && t.major==null))
+    return `<div class="fstage fs-none">Threshold unavailable &middot; flood status not assessed</div>`;
   let cat="Normal", cls="fs-normal", ref=null, refName="";
   if(t.major!=null && gh>=t.major){cat="MAJOR FLOOD"; cls="fs-major";}
   else if(t.moderate!=null && gh>=t.moderate){cat="MODERATE FLOOD"; cls="fs-moderate";}
@@ -668,7 +664,7 @@ function floodContext(siteId, gh){
   const ladder=[["action",t.action],["minor",t.minor],["moderate",t.moderate],["major",t.major]].filter(x=>x[1]!=null);
   const next = ladder.find(x=>gh < x[1]);
   let dist = next ? `${(next[1]-gh).toFixed(2)} ft below ${next[0]} stage` : (ladder.length?`above all defined stages`:"");
-  return `<div class="fstage ${cls}">${cat}${dist?` &middot; ${dist}`:""}</div>`;
+  return `<div class="fstage ${cls}">${cat}${dist?` &middot; ${dist}`:""}<br>Threshold source: ${escapeHTML(t.source)} &middot; verified ${fmtTime(t.verifiedAt)} &middot; ${escapeHTML(t.datum||"Datum not recorded")}</div>`;
 }
 async function loadWater(){
   const el = document.getElementById("water");
@@ -683,8 +679,10 @@ async function loadWater(){
       const code = ts.variable.variableCode[0].value;
       const vals = ts.values[0].value;
       if(!vals||!vals.length) return;
-      const nums = vals.map(v=>parseFloat(v.value)).filter(x=>!isNaN(x));
-      const last = vals[vals.length-1], prev = vals.length>3?vals[vals.length-4]:vals[0];
+      const valid=vals.filter(v=>Number.isFinite(+v.value) && +v.value!==+ts.variable.noDataValue);
+      if(!valid.length) return;
+      const nums = valid.map(v=>+v.value);
+      const last = valid[valid.length-1], prev = valid.length>3?valid[valid.length-4]:valid[0];
       byId[sid]=byId[sid]||{}; byId[sid][code]={v:parseFloat(last.value), t:last.dateTime, prev:parseFloat(prev.value), series:nums.slice(-96)};
     });
     USGS_SITES.forEach(s=>{
@@ -695,21 +693,24 @@ async function loadWater(){
       if(gh){ const dl=gh.v-gh.prev; if(dl>0.05){trend="trend-up";arr="&#9650;";} else if(dl<-0.05){trend="trend-dn";arr="&#9660;";} }
       const tempF = wt? (wt.v*9/5+32).toFixed(1)+"&deg;F":"&mdash;";
       rows += `<tr>
-        <td>${s.name}<div class="small muted">USGS ${s.id} &middot; ${gh?fmtTime(gh.t):""}</div>${gh?floodContext(s.id,gh.v):""}</td>
+        <td>${s.name}<div class="small muted">USGS ${s.id} &middot; ${gh?fmtTime(gh.t):"No level observation"} &middot; ${gh?ageLabel(gh.t):"Unavailable"}<br>${s.id==="04159130"?"USGS reported level; verify station datum before comparison":"Local gauge height; station datum"}</div>${gh?floodContext(s.id,gh.v):""}</td>
         <td class="num ${trend}">${gh?gh.v.toFixed(2)+" ft "+arr:"&mdash;"}<div>${gh?sparkline(gh.series):""}</div></td>
         <td class="num">${q?Math.round(q.v).toLocaleString()+" cfs":"&mdash;"}</td>
         <td class="num">${tempF}</td></tr>`;
     });
     let noaaRow="";
     try{
-      const w = await getJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station=${NOAA_WL_STATION}&product=water_level&datum=IGLD&units=english&time_zone=lst_ldt&format=json`);
+      const w = await getJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=latest&station=${NOAA_WL_STATION}&product=water_level&datum=IGLD&units=english&time_zone=gmt&format=json`);
       if(w.data && w.data.length){ const dd=w.data[w.data.length-1];
-        noaaRow = `<tr><td>Black River Mouth (Great Lakes)<div class="small muted">NOAA ${NOAA_WL_STATION} &middot; IGLD datum</div></td><td class="num">${parseFloat(dd.v).toFixed(2)} ft</td><td class="num muted">&mdash;</td><td class="num muted">&mdash;</td></tr>`;
+        noaaRow = `<tr><td>Black River Mouth (Great Lakes)<div class="small muted">NOAA ${NOAA_WL_STATION} &middot; elevation, IGLD 1985<br>${fmtTime(dd.t.replace(" ","T")+"Z")} &middot; ${ageLabel(dd.t.replace(" ","T")+"Z")}<br>Threshold unavailable &middot; flood status not assessed</div></td><td class="num">${parseFloat(dd.v).toFixed(2)} ft</td><td class="num muted">&mdash;</td><td class="num muted">&mdash;</td></tr>`;
       }
     }catch(e){}
-    el.innerHTML = `<table><thead><tr><th>Gauge</th><th class="num">Gage Ht / 72h</th><th class="num">Discharge</th><th class="num">Temp</th></tr></thead><tbody>${rows}${noaaRow}</tbody></table>
-      <div class="small muted" style="margin-top:8px;">&#9650; rising &middot; &#9660; falling (last hr) &middot; sparkline = 72h trend. <a href="https://water.noaa.gov/wfo/DTX" target="_blank" rel="noopener">NWS flood forecasts &#8599;</a></div>`;
-    stamp("upd-water"); feedOK("water");
+    el.innerHTML = `<table><thead><tr><th>Gauge</th><th class="num">Level / trend</th><th class="num">Discharge</th><th class="num">Temp</th></tr></thead><tbody>${rows}${noaaRow}</tbody></table>
+      <div class="small muted" style="margin-top:8px;">&#9650; rising &middot; &#9660; falling (last hr) &middot; sparkline = recent samples within the 72h query. <a href="https://water.noaa.gov/wfo/DTX" target="_blank" rel="noopener">NWS flood forecasts &#8599;</a></div>`;
+    const times=Object.values(byId).flatMap(r=>Object.values(r).map(v=>Date.parse(v.t))).filter(Number.isFinite);
+    if(!times.length) throw new Error("No valid gauge observations");
+    stamp("upd-water"); feedOK("water", Math.min(...times), 120);
+    if(USGS_SITES.some(s=>!byId[s.id]?.["00065"]) || !noaaRow) feedPartial("water", "One or more gauge readings unavailable");
   }catch(e){ el.innerHTML = `<div class="err">Gauge data unavailable (${e.message}). <a href="https://waterdata.usgs.gov/mi/nwis/rt" target="_blank" rel="noopener">Open USGS MI &#8599;</a></div>`; feedDown("water"); }
 }
 
@@ -744,18 +745,7 @@ const USACE_FLOOD = {
   "St. Clair State Police": {minor:578.77, alert:579.30, major:579.99},
   "Algonac":                {minor:577.33, alert:578.02, major:578.22}
 };
-function usaceFlood(name, v){
-  const t = USACE_FLOOD[name];
-  if(!t || v==null) return "";
-  let cat="Below minor stage", cls="fs-normal";
-  if(v>=t.major){cat="MAJOR FLOOD STAGE"; cls="fs-major";}
-  else if(v>=t.alert){cat="ALERT STAGE"; cls="fs-moderate";}
-  else if(v>=t.minor){cat="MINOR FLOOD STAGE"; cls="fs-minor";}
-  const ladder=[["minor",t.minor],["alert",t.alert],["major",t.major]];
-  const next=ladder.find(x=>v<x[1]);
-  const dist = next ? `${(next[1]-v).toFixed(2)} ft below ${next[0]} stage` : "above major stage";
-  return `<div class="fstage ${cls}">${cat} &middot; ${dist}</div>`;
-}
+function usaceFlood(name,v){const index=USACE_GAUGES.findIndex(g=>g.name===name);return floodContext('usace'+index,v);}
 async function loadUSACE(){
   const el = document.getElementById("usace");
   try{
@@ -763,7 +753,7 @@ async function loadUSACE(){
     const data = await Promise.all(USACE_GAUGES.map(async g=>{
       try{
         const u=`https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRE&name=${encodeURIComponent(g.tsid)}&begin=${begin.toISOString()}&end=${end.toISOString()}&page-size=500`;
-        const j=await (await fetch(u,{headers:{"Accept":"application/json;version=2"}})).json();
+        const j=await (await fetch(u,{headers:{"Accept":"application/json;version=2"},signal:AbortSignal.timeout(25000)})).json();
         const vals=(j.values||[]).filter(v=>v[1]!=null);
         if(!vals.length) return {g,v:null};
         const last=vals[vals.length-1], prev=vals.length>3?vals[vals.length-4]:vals[0];
@@ -778,11 +768,11 @@ async function loadUSACE(){
       if(d.v==null) return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small></div><div class="sg-bar"></div><div class="sg-val muted">no data</div></div>`;
       const w=22+Math.round((d.v-mn)/span*78); let arr="&#8594;",cls="trend-flat";
       if(d.prev!=null){const dl=d.v-d.prev; if(dl>0.03){arr="&#9650;";cls="trend-up";} else if(dl<-0.03){arr="&#9660;";cls="trend-dn";}}
-      return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note}</small>${usaceFlood(d.g.name,d.v)}</div><div class="sg-bar"><span style="width:${w}%"></span></div><div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div></div>`;
+      return `<div class="stage-row"><div class="sg-name">${d.g.name}<small>${d.g.note} &middot; ${fmtTime(d.t)} &middot; ${ageLabel(d.t,180)}</small>${usaceFlood(d.g.name,d.v)}</div><div class="sg-bar"><span style="width:${w}%"></span></div><div class="sg-val">${d.v.toFixed(2)} <small>ft</small> <span class="${cls}">${arr}</span></div></div>`;
     }).join("");
     const fallTxt = fall!=null?`<div class="fall-note">Head-to-mouth fall (Fort Gratiot &rarr; Algonac): <b>${fall.toFixed(2)} ft</b> &middot; IGLD 1985 datum &middot; USACE Detroit District (LRE).</div>`:"";
-    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &#9650; rising &middot; &#9660; falling (last ~3 hr). Flood stages set for St. Clair (Minor 578.77 / Alert 579.30 / Major 579.99) and Algonac (Minor 577.33 / Alert 578.02 / Major 578.22). <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
-    stamp("upd-usace"); feedOK("usace");
+    el.innerHTML = fallTxt + rows + `<div class="small muted" style="margin-top:8px;">Stage in feet (IGLD 1985). &#9650; rising &middot; &#9660; falling (last ~3 hr). Historical thresholds require a verified source and datum match before use; no flood assessment is made from them. <a href="https://www.glerl.noaa.gov/data/wlevels/" target="_blank" rel="noopener">Great Lakes water levels &#8599;</a></div>`;
+    stamp("upd-usace"); feedOK("usace", Math.min(...got.map(d=>d.t)), 180); if(got.length<data.length) feedPartial("usace", "Some stations unavailable");
   }catch(e){ el.innerHTML=`<div class="err">USACE feed error (${e.message}).</div>`; feedDown("usace"); }
 }
 
@@ -792,7 +782,7 @@ async function loadUSACE(){
 async function loadMarine(){
   const el=document.getElementById("marine");
   try{
-    let html="";
+    let html="", marineIssued=null, marineForecast=false;
     const al=await getJSON(`https://api.weather.gov/alerts/active?zone=${MARINE_ZONES}`, UA_HEADERS);
     const feats=(al.features||[]).map(f=>f.properties);
     if(feats.length){ html+=feats.map(p=>{const sev=p.severity||"Unknown"; return `<div class="alert sev-${sev}" style="margin-bottom:8px;"><div class="a-top"><span class="a-event">${p.event} <span class="badge b-${sev}">${sev}</span></span><span class="a-time">until ${fmtTime(p.expires||p.ends)}</span></div><div class="a-head">${(p.areaDesc||"").replace(/</g,"&lt;")}</div></div>`;}).join(""); }
@@ -801,14 +791,15 @@ async function loadMarine(){
       const list=await getJSON(`https://api.weather.gov/products/types/NSH/locations/DTX`, {Accept:"application/ld+json"});
       if(list["@graph"] && list["@graph"].length){
         const prod=await getJSON(list["@graph"][0]["@id"], {Accept:"application/ld+json"});
+        marineIssued=prod.issuanceTime;
         const seg=(prod.productText||"").split("$$").find(s=>/LHZ443/.test(s))||"";
         const periods=[]; const re=/\.([A-Z][A-Z .]+?)\.\.\.([\s\S]*?)(?=\n\.[A-Z]|\nSee |$)/g; let m;
         while((m=re.exec(seg))!==null){ periods.push({n:m[1].trim(), t:m[2].replace(/\s+/g," ").trim()}); }
-        if(periods.length){ html+=`<div class="small muted" style="margin:4px 0 6px;">NWS Nearshore Forecast &mdash; Lake Huron, Port Sanilac to Port Huron:</div>`; html+=periods.slice(0,4).map(p=>`<div class="mar-period"><div class="mp-n">${p.n}</div><div class="mp-t">${p.t}</div></div>`).join(""); }
+        if(periods.length){ marineForecast=true; html+=`<div class="small muted" style="margin:4px 0 6px;">NWS Nearshore Forecast &mdash; Lake Huron, Port Sanilac to Port Huron:</div>`; html+=periods.slice(0,4).map(p=>`<div class="mar-period"><div class="mp-n">${p.n}</div><div class="mp-t">${p.t}</div></div>`).join(""); }
       }
     }catch(e){}
     html+=`<div class="small muted" style="margin-top:8px;">Waters: Lake Huron (Port Huron), St. Clair River, Lake St. Clair. <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">Full marine forecast &#8599;</a></div>`;
-    el.innerHTML=html; stamp("upd-marine"); feedOK("marine");
+    el.innerHTML=html; stamp("upd-marine"); feedOK("marine",marineIssued,1440); if(!marineForecast) feedPartial("marine", "Marine forecast unavailable; alerts retrieved");
   }catch(e){ el.innerHTML=`<div class="err">Marine data unavailable (${e.message}). <a href="https://www.weather.gov/dtx/marine" target="_blank" rel="noopener">NWS marine &#8599;</a></div>`; feedDown("marine"); }
 }
 
@@ -818,8 +809,8 @@ async function loadMarine(){
 let MAP=null, WARN_LAYER=null;
 function initMap(){
   if(typeof L==="undefined"){ document.getElementById("map").innerHTML='<div class="err" style="padding:10px;">Map library offline. County + gauge coordinates still available via links.</div>'; feedDown("map"); return; }
-  MAP=L.map("map",{zoomControl:true, attributionControl:false}).setView([LAT,LON],9);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:18}).addTo(MAP);
+  MAP=L.map("map",{zoomControl:true, attributionControl:true}).setView([LAT,LON],9);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:18,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(MAP);
   L.circleMarker([LAT,LON],{radius:7,color:"#3da5ff",fillColor:"#3da5ff",fillOpacity:.9}).addTo(MAP).bindPopup("St. Clair County EOC / Port Huron");
   USGS_SITES.forEach(s=>{ if(s.lat) L.circleMarker([s.lat,s.lon],{radius:6,color:"#2bb0e6",fillColor:"#0e1623",fillOpacity:.9,weight:2}).addTo(MAP).bindPopup(s.name+" (USGS "+s.id+")"); });
   WARN_LAYER=L.layerGroup().addTo(MAP);
@@ -828,15 +819,15 @@ function initMap(){
 async function loadMapWarnings(){
   if(!MAP || !WARN_LAYER) return;
   try{
-    WARN_LAYER.clearLayers();
     const d=await getJSON(`https://api.weather.gov/alerts/active?point=${LAT},${LON}`, UA_HEADERS);
+    WARN_LAYER.clearLayers();
     let drew=0;
     (d.features||[]).forEach(f=>{
       if(f.geometry){ const sev=f.properties.severity; const col=sev==="Extreme"?"#c026d3":sev==="Severe"?"#ff4d4d":sev==="Moderate"?"#ff7a3d":"#ffb020";
         L.geoJSON(f.geometry,{style:{color:col,weight:2,fillColor:col,fillOpacity:.15}}).bindPopup(`<b>${f.properties.event}</b><br>${(f.properties.headline||"").replace(/</g,"&lt;")}`).addTo(WARN_LAYER); drew++; }
     });
-    stamp("upd-map");
-  }catch(e){}
+    stamp("upd-map"); feedOK("map");
+  }catch(e){ feedDown("map"); }
 }
 
 /* ============================================================
@@ -844,14 +835,6 @@ async function loadMapWarnings(){
    ============================================================ */
 const ESF_CYCLE={"s-green":"s-amber","s-amber":"s-red","s-red":"s-green"};
 const ESF_LABEL={"s-green":"Ready","s-amber":"Elevated","s-red":"Activated"};
-function renderESF(){
-  document.getElementById("esf").innerHTML = CFG.esf.map((row,i)=>{
-    const [n,t,s]=row;
-    return `<div class="esf-item"><div class="e-n">${n}</div><div class="e-t">${t}</div><span class="status-pill ${s}" onclick="cycleESF(${i})" title="Click to change">${ESF_LABEL[s]}</span></div>`;
-  }).join("");
-}
-function cycleESF(i){ CFG.esf[i][2]=ESF_CYCLE[CFG.esf[i][2]]||"s-green"; saveCfg(); renderESF(); }
-
 /* ============================================================
    RESOURCE LINKS
    ============================================================ */
@@ -861,7 +844,7 @@ const LINKS = [
   ["Roads","MDOT Mi Drive","Live traffic, closures, cameras","https://mdotjboss.state.mi.us/MiDrive/map"],
   ["Power","DTE Energy Outage Map","Electric outages & restoration","https://outage.dteenergy.com/"],
   ["Power","SmartHub / Mich. Outage","Statewide outage view","https://poweroutage.us/area/state/michigan"],
-  ["Flood","NWS AHPS River Levels","Flood stage & forecasts","https://water.noaa.gov/wfo/DTX"],
+  ["Flood","NWS National Water Prediction Service River Levels","Flood stage & forecasts","https://water.noaa.gov/wfo/DTX"],
   ["HazMat","EPA Response / ERNS","Spills & releases","https://response.epa.gov/"],
   ["Air","AirNow AQI","Air quality & smoke","https://www.airnow.gov/?city=Port%20Huron&state=MI&country=USA"],
   ["State","MI State Police / EMHSD","State emergency management","https://www.michigan.gov/msp/divisions/emhsd"],
@@ -878,18 +861,10 @@ function renderLinks(){ document.getElementById("links").innerHTML = LINKS.map((
 /* ============================================================
    ACTIVATION BANNER
    ============================================================ */
-function renderActivation(){
-  const a=CFG.activation, cls={"NORMAL":"","ENHANCED MONITORING":"amber","PARTIAL ACTIVATION":"orange","FULL ACTIVATION":"red"}[a.level]||"amber";
-  const banner=document.getElementById("activation"); banner.className="activation "+cls;
-  document.getElementById("act-lvl").textContent=a.level;
-  document.getElementById("act-state").textContent=a.state||"—";
-  document.getElementById("act-note").textContent=a.note||"";
-}
-
 /* ============================================================
    SETTINGS DRAWER
    ============================================================ */
-function openDrawer(){
+function openLegacyDrawer(){
   document.getElementById("set-act-level").value=CFG.activation.level;
   document.getElementById("set-act-state").value=CFG.activation.state;
   document.getElementById("set-act-note").value=CFG.activation.note;
@@ -906,19 +881,6 @@ function openDrawer(){
   document.getElementById("drawer-mask").classList.add("open");
 }
 function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawer-mask").classList.remove("open"); }
-function saveSettings(){
-  CFG.activation.level=document.getElementById("set-act-level").value;
-  CFG.activation.state=document.getElementById("set-act-state").value;
-  CFG.activation.note=document.getElementById("set-act-note").value;
-  CFG.reloadHours=Math.max(1,parseInt(document.getElementById("set-reload").value)||6);
-  CFG.chime=document.getElementById("set-chime").checked;
-  CFG.wake=document.getElementById("set-wake").checked;
-  document.querySelectorAll("[data-esf]").forEach(sel=>{ CFG.esf[+sel.dataset.esf][2]=sel.value; });
-  document.querySelectorAll("[data-th]").forEach(inp=>{ const [sid,key]=inp.dataset.th.split("."); CFG.thresholds[sid]=CFG.thresholds[sid]||{}; CFG.thresholds[sid][key]= inp.value===""?null:parseFloat(inp.value); });
-  saveCfg(); renderActivation(); renderESF(); updateStatusStrip(); loadWater(); applyWake(); scheduleReload(); closeDrawer();
-}
-function resetSettings(){ if(!confirm("Reset all dashboard settings to defaults?")) return; CFG=structuredClone(DEFAULTS); saveCfg(); renderActivation(); renderESF(); updateStatusStrip(); loadWater(); closeDrawer(); }
-
 /* ============================================================
    THEME + KIOSK
    ============================================================ */
@@ -930,34 +892,6 @@ function toggleKiosk(){ CFG.kiosk=!CFG.kiosk; saveCfg(); applyKiosk(); }
 /* ============================================================
    SITREP (printable daily status report from live data)
    ============================================================ */
-function genSITREP(){
-  const now=new Date().toLocaleString("en-US",{timeZone:"America/Detroit"});
-  const a=CFG.activation;
-  const alerts = LAST_ALERTS.length ? LAST_ALERTS.map(p=>`<li><b>${p.event}</b> (${p.severity}) — ${(p.headline||p.areaDesc||"").replace(/</g,"&lt;")} <i>until ${fmtTime(p.expires||p.ends)}</i></li>`).join("") : "<li>No active NWS warnings, watches, or advisories.</li>";
-  const esf = CFG.esf.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${ESF_LABEL[r[2]]}</td></tr>`).join("");
-  const cond = document.getElementById("conditions").innerText.replace(/\n+/g," • ");
-  const hwo = document.getElementById("hwo").innerText.slice(0,1200);
-  const win=window.open("","_blank");
-  win.document.write(`<html><head><title>SCC EOC Daily SITREP — ${now}</title>
-  <style>body{font-family:Segoe UI,Arial,sans-serif;max-width:820px;margin:24px auto;color:#111;line-height:1.5;}
-  h1{font-size:20px;margin:0;} h2{font-size:14px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #333;padding-bottom:3px;margin-top:22px;}
-  table{border-collapse:collapse;width:100%;font-size:13px;} td,th{border:1px solid #999;padding:5px 8px;text-align:left;}
-  .meta{color:#555;font-size:12px;} ul{margin:6px 0;} .box{border:1px solid #999;padding:10px;border-radius:6px;background:#f6f8fb;}
-  @media print{.noprint{display:none;}}</style></head><body>
-  <div class="noprint" style="text-align:right;"><button onclick="window.print()">Print / Save PDF</button></div>
-  <h1>St. Clair County EOC — Daily Situation Report</h1>
-  <div class="meta">Generated ${now} ET &middot; Unofficial situational-awareness summary</div>
-  <h2>1. EOC Posture</h2><div class="box"><b>${a.level}</b> — ${a.state}<br>${a.note||""}</div>
-  <h2>2. Active Warnings & Hazards</h2><ul>${alerts}</ul>
-  <h2>3. Current Conditions</h2><div class="box">${cond}</div>
-  <h2>4. Hazardous Weather Outlook</h2><div class="box" style="white-space:pre-wrap;font-size:12px;">${hwo.replace(/</g,"&lt;")}</div>
-  <h2>5. ESF Readiness</h2><table><tr><th>ESF</th><th>Function</th><th>Status</th></tr>${esf}</table>
-  <h2>6. Notes / Action Items</h2><div class="box" style="min-height:80px;">&nbsp;</div>
-  <p class="meta">Confirm all life-safety decisions against official NWS and emergency-management channels.</p>
-  </body></html>`);
-  win.document.close();
-}
-
 /* ============================================================
    UNATTENDED OPERATION
    ============================================================ */
@@ -986,6 +920,72 @@ function refreshAll(){
   loadAlerts(); loadConditions(); loadForecast(); loadHWO(); loadWater(); loadUSACE(); loadMarine(); loadQuakes(); loadMapWarnings(); bustRadar();
   document.getElementById("last-refresh").textContent = new Date().toLocaleTimeString("en-US",{timeZone:"America/Detroit"}) + " ET";
 }
+/* Operational verification, local audit trail, and optional authenticated sync.
+   No operational data is sent anywhere until an operator configures and connects. */
+var OPS, SYNC=null, SNAPSHOTS={}, BODY_IDS={alerts:'alerts',conditions:'conditions',forecast:'forecast',hwo:'hwo',water:'water',usace:'usace',marine:'marine',quakes:'quakes'};
+function escapeHTML(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ageLabel(t,limit=120){const n=Date.parse(t);const ms=typeof t==='number'?t:n;if(!Number.isFinite(ms))return 'Observation time unavailable';const min=Math.max(0,Math.round((Date.now()-ms)/60000));return `${min>limit?'Delayed':'Current'} · ${min} min old`;}
+function feedLabel(k){const s=feedState[k];if(!s)return 'Loading';if(s.st==='down')return 'Unavailable';if(s.partial)return 'Delayed / partial';if(Date.now()-s.success>10*60000 || (s.observed && Date.now()-s.observed>s.limit*60000))return 'Delayed';return 'Current';}
+function renderFeedHealth(){const e=document.getElementById('feedhealth');if(!e)return;e.innerHTML='<span class="fh-lbl">Feeds</span>'+Object.keys(FEEDS).map(k=>{const s=feedState[k]||{},label=feedLabel(k);return `<span class="fh ${label==='Current'?'ok':label==='Unavailable'?'down':'wait'}" title="${escapeHTML(s.note||'Successful retrieval time is separate from observation age')}"><span class="d"></span><span class="nm">${FEEDS[k]}: ${label}</span><span class="tm">${s.success?'retrieved '+fmtTime(s.success):'No successful retrieval'}${s.observed?' · '+ageLabel(s.observed,s.limit):''}</span></span>`;}).join('');}
+function feedOK(k,observed=null,limit=120){const ms=typeof observed==='number'?observed:Date.parse(observed);feedState[k]={st:'ok',success:Date.now(),observed:Number.isFinite(ms)?ms:null,limit};if(BODY_IDS[k])SNAPSHOTS[k]=document.getElementById(BODY_IDS[k]).innerHTML;try{localStorage.setItem("sccFeedCacheV1",JSON.stringify({snapshots:SNAPSHOTS,feeds:feedState}));}catch{}renderFeedHealth();markSuccess();if(k==='alerts')updateStatusStrip();}
+function feedPartial(k,note){feedState[k]={...feedState[k],partial:true,note};renderFeedHealth();}
+function feedDown(k){feedState[k]={...feedState[k],st:'down'};const el=document.getElementById(BODY_IDS[k]);if(el&&SNAPSHOTS[k])el.innerHTML=`<div class="err" role="status">Feed unavailable. Last successful data retained from ${fmtTime(feedState[k].success)}; do not treat it as current.</div>`+SNAPSHOTS[k];renderFeedHealth();if(k==='alerts')updateStatusStrip();}
+function isRegional(p){const u=p.geocode?.UGC||[];return !u.some(z=>[...ZONES.split(','),'LHZ443','LCZ460','LCZ422','LCZ423'].includes(z));}
+function localArea(p){const u=p.geocode?.UGC||[];let local=[];if(u.includes('MIZ063')||u.includes('MIC147'))local.push('St. Clair County');if(u.includes('LHZ443'))local.push('Lake Huron: Port Sanilac to Port Huron');if(u.includes('LCZ422'))local.push('St. Clair River');if(u.includes('LCZ460')||u.includes('LCZ423'))local.push('Lake St. Clair');return local.length?'Local coverage: '+local.join('; '):'Regional marine coverage — review affected waters below';}
+function updateStatusStrip(){const label=feedLabel('alerts'),valid=label==='Current',feats=LAST_ALERTS.filter(p=>!p.expires||Date.parse(p.expires)>Date.now());const worst=feats.length?feats[0].severity||'Unknown':'None';document.getElementById('ss-count').textContent=valid?feats.length:'Unknown';const w=document.getElementById('ss-worst');w.textContent=valid?worst:'Not current';w.className='v w'+(valid?worst:'Unknown');document.getElementById('ss-priority').textContent=!valid?'Alert feed '+label.toLowerCase()+'. Verify current conditions with NWS.':feats.length?`${feats[0].event} — ${localArea(feats[0])}`:'No active NWS alerts in monitored zones. Other hazards require separate verification.';const level=OPS?.activation?.confirmedAt?CFG.activation.level:'UNVERIFIED';const p=document.getElementById('ss-posture');p.textContent=level==='UNVERIFIED'?'Not verified':level==='NORMAL'?'NORMAL / MONITORING':level;p.className='v '+({'NORMAL':'p-normal','ENHANCED MONITORING':'p-enhanced','PARTIAL ACTIVATION':'p-partial','FULL ACTIVATION':'p-full'}[level]||'s-unverified');}
+function renderActivation(){const a=CFG.activation,verified=OPS?.activation?.confirmedAt;const level=verified?a.level:'UNVERIFIED';document.getElementById('activation').className='activation '+({'ENHANCED MONITORING':'amber','PARTIAL ACTIVATION':'orange','FULL ACTIVATION':'red'}[level]||'unverified');document.getElementById('act-lvl').textContent=level==='UNVERIFIED'?'ACTIVATION NOT VERIFIED':level==='NORMAL'?'NORMAL / MONITORING':level;document.getElementById('act-state').textContent=a.state||'No incident name recorded';document.getElementById('act-note').textContent=(a.note||'')+' · '+(verified?`Recorded by ${OPS.activation.by} at ${fmtTime(verified)} ET`:'No authorized declaration recorded')+' · Monitoring guidance is separate from declared activation.';}
+function restoreFeedCache(){try{const c=JSON.parse(localStorage.getItem('sccFeedCacheV1')||'null');if(!c)return;for(const k of Object.keys(BODY_IDS)){if(c.snapshots?.[k]&&c.feeds?.[k]?.success){SNAPSHOTS[k]=c.snapshots[k];feedState[k]={...c.feeds[k],st:'down'};feedDown(k);}}}catch{}}
+function defaultOperations(){return {version:1,activation:{by:'',confirmedAt:null},overview:{areas:'',objectives:'',needs:'',briefing:'',by:'',confirmedAt:null},esf:{},hazards:{},thresholdMeta:{},audit:[]};}
+function initializeOperations(){try{OPS=JSON.parse(localStorage.getItem('sccOperationsV1'))||defaultOperations();}catch{OPS=defaultOperations();}OPS={...defaultOperations(),...OPS};for(const row of CFG.esf){if(!OPS.esf[row[0]]?.confirmedAt)row[2]='s-unverified';}if(!OPS.activation.confirmedAt){CFG.activation.level='UNVERIFIED';if(CFG.activation.state==='Routine Monitoring')CFG.activation.state='';}document.querySelector('.wrap').insertAdjacentHTML('afterbegin',`<nav class="ops-nav" aria-label="Dashboard sections"><a href="#ops-overview">Overview</a><a href="#card-alerts">Weather</a><a href="#ops-infrastructure">Infrastructure</a><a href="#ops-health">Health &amp; shelter</a><a href="#ops-response">Response</a></nav><section class="card ops-summary" id="ops-overview"><h2>Operational overview <button class="btn" onclick="editOperations()">Update overview</button></h2><div class="body"><div id="ops-mode" class="ops-banner"></div><div id="ops-summary" class="ops-grid"></div><div class="ops-actions"><button class="btn" onclick="editActivation()">Record activation</button><button class="btn" onclick="showActivity()">Activity history</button><button class="btn" onclick="configureShared()">Shared connection</button></div><p id="ops-guidance" class="small muted"></p></div></section><section class="card ops-summary" id="ops-infrastructure"><h2>Infrastructure &amp; access</h2><div class="body ops-grid" id="infra-cards"></div></section><section class="card ops-summary" id="ops-health"><h2>Health, smoke &amp; shelter</h2><div class="body ops-grid" id="health-cards"></div></section>`);document.getElementById('esf').closest('section').id='ops-response';document.body.insertAdjacentHTML('beforeend','<dialog class="ops-dialog" id="ops-dialog" aria-labelledby="ops-dialog-title"></dialog>');restoreFeedCache();renderOperations();setInterval(()=>{renderFeedHealth();updateStatusStrip();renderOperations();},60000);window.addEventListener('storage',e=>{if(e.key==='sccOperationsV1'){try{OPS=JSON.parse(e.newValue)||defaultOperations();CFG=loadCfg();renderOperations();renderESF();renderActivation();updateStatusStrip();}catch{}}});}
+const HAZARDS=[['power','Power outages','https://outage.dteenergy.com/','DTE outage map','infra'],['roads','Road closures','https://mdotjboss.state.mi.us/MiDrive/map','MDOT Mi Drive','infra'],['border','Blue Water Bridge','https://bwt.cbp.gov/','CBP border wait times','infra'],['air','Air quality / smoke','https://www.airnow.gov/?city=Port%20Huron&state=MI&country=USA','AirNow','health'],['health','Public health notices','https://www.scchealth.co/','County Health Department','health'],['shelter','Shelters / mass care','https://www.redcross.org/get-help/disaster-relief-and-recovery-services/find-an-open-shelter.html','Red Cross shelter finder','health']];
+function renderOperations(){if(!OPS)return;const o=OPS.overview;document.getElementById('ops-mode').textContent=SYNC?`Shared operations connected · ${SYNC.url} · revision ${SYNC.revision}`:'Local operations — updates stay in this browser. Shared editing is not connected.';document.getElementById('ops-summary').innerHTML=[['Affected areas',o.areas],['Incident objectives',o.objectives],['Outstanding resource needs',o.needs],['Next briefing',o.briefing?fmtTime(o.briefing)+' ET':'']].map(([k,v])=>`<div class="ops-item"><h3>${k}</h3><div class="ops-value">${escapeHTML(v||'Not recorded')}</div></div>`).join('')+`<div class="ops-item"><h3>Overview verification</h3><div>${escapeHTML(o.confirmedAt?o.by+' · '+fmtTime(o.confirmedAt)+' ET':'Not verified')}</div></div>`;document.getElementById('ops-guidance').textContent='Monitoring guidance: '+(feedLabel('alerts')!=='Current'?'Current alerts could not be verified.':LAST_ALERTS.some(p=>['Severe','Extreme'].includes(p.severity))?'Review urgent NWS alerts and affected areas.':'Review alerts, observation ages, and manual hazard reports.')+' This does not set EOC activation.';for(const group of ['infra','health'])document.getElementById(group==='infra'?'infra-cards':'health-cards').innerHTML=HAZARDS.filter(h=>h[4]===group).map(([id,title,url,source])=>{const r=OPS.hazards[id]||{};const stale=r.confirmedAt&&Date.now()-Date.parse(r.confirmedAt)>120*60000;return `<article class="ops-item"><h3>${title}</h3><span class="badge ${!r.confirmedAt?'s-unverified':stale?'s-amber':r.status==='Disrupted'?'s-red':'s-green'}">${escapeHTML(!r.confirmedAt?'Not verified':stale?'Delayed — reconfirm':r.status)}</span><p>${escapeHTML(r.summary||'No confirmed report recorded. Open the source to verify conditions.')}</p><div class="ops-meta">${escapeHTML(r.confirmedAt?'Manual report · '+r.by+' · '+fmtTime(r.confirmedAt)+' ET':'Manual verification required')}${r.source?'<br>Report source: '+escapeHTML(r.source):''}</div><p><a href="${url}" target="_blank" rel="noopener">${source} ↗</a></p><button class="btn" onclick="editHazard('${id}')">Verify / update</button></article>`;}).join('');}
+function persistOperations(action,by){OPS.audit.unshift({at:new Date().toISOString(),by,action});OPS.audit=OPS.audit.slice(0,200);try{localStorage.setItem('sccOperationsV1',JSON.stringify(OPS));localStorage.setItem('sccEocCfg',JSON.stringify(CFG));}catch{throw Error('Browser storage is unavailable; this change cannot be saved.');}renderOperations();renderESF();renderActivation();updateStatusStrip();}
+function openOpsDialog(title,body,save){const d=document.getElementById('ops-dialog');d.innerHTML=`<h2 id="ops-dialog-title">${escapeHTML(title)}</h2><form id="ops-form">${body}<p class="ops-error" id="ops-error" role="alert"></p><div class="ops-actions">${save?'<button type="submit" class="btn">Save verified update</button>':''}<button type="button" class="btn" onclick="document.getElementById('ops-dialog').close()">Close</button></div></form>`;document.getElementById('ops-form').onsubmit=async e=>{e.preventDefault();const backup=JSON.stringify({OPS,CFG});try{await save(new FormData(e.target));d.close();}catch(err){const state=JSON.parse(backup);OPS=state.OPS;CFG=state.CFG;document.getElementById('ops-error').textContent=err.message;}};d.showModal();}
+function field(name,label,value='',type='text',required=false){return `<label for="op-${name}">${escapeHTML(label)}</label><input id="op-${name}" name="${name}" type="${type}" value="${escapeHTML(value)}" ${required?'required':''} maxlength="2000">`;}
+function textField(name,label,value=''){return `<label for="op-${name}">${escapeHTML(label)}</label><textarea id="op-${name}" name="${name}" maxlength="4000">${escapeHTML(value)}</textarea>`;}
+function selectField(name,label,options,value){return `<label for="op-${name}">${label}</label><select id="op-${name}" name="${name}">${options.map(v=>`<option ${value===v?'selected':''}>${escapeHTML(v)}</option>`).join('')}</select>`;}
+function operator(f){const by=String(f.get('by')||'').trim();if(!by)throw Error('Enter the responsible agency / operator.');return by;}
+async function saveOperationalChange(action,by){if(SYNC){const r=await fetch(SYNC.url,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json','If-Match':String(SYNC.revision)},body:JSON.stringify({operations:OPS,activation:CFG.activation,esf:CFG.esf,thresholds:CFG.thresholds,change:{action,by}})});if(r.status===409||r.status===412)throw Error('Another operator updated shared status. Reconnect to load the latest revision before saving.');if(!r.ok)throw Error('Shared save failed ('+r.status+'). No local change saved.');const j=await r.json();if(j.revision==null)throw Error('Shared response has no revision. Reconnect to verify the saved state.');SYNC.revision=j.revision;}persistOperations(action,by);}
+function editOperations(){const o=OPS.overview;openOpsDialog('Update operational overview',textField('areas','Affected areas',o.areas)+textField('objectives','Incident objectives',o.objectives)+textField('needs','Outstanding resource needs',o.needs)+field('briefing','Next briefing (Eastern Time)',o.briefing?easternInput(o.briefing):'','datetime-local')+field('by','Responsible agency / operator',o.by,'text',true),async f=>{const by=operator(f);OPS.overview={areas:f.get('areas'),objectives:f.get('objectives'),needs:f.get('needs'),briefing:f.get('briefing')?fromEasternInput(f.get('briefing')):'',by,confirmedAt:new Date().toISOString()};await saveOperationalChange('Updated operational overview',by);});}
+function easternInput(iso){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Detroit',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));const v=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${v.year}-${v.month}-${v.day}T${v.hour}:${v.minute}`;}
+function fromEasternInput(v){let t=Date.parse(v+'Z');for(let i=0;i<3;i++){const local=easternInput(new Date(t).toISOString());t+=Date.parse(v+'Z')-Date.parse(local+'Z');}if(easternInput(new Date(t).toISOString())!==v)throw Error('That Eastern Time does not exist because of daylight saving time.');return new Date(t).toISOString();}
+function editActivation(){openOpsDialog('Record declared EOC activation','<p class="small muted">Record a declaration from an authorized EOC representative. Dashboard monitoring guidance never changes this level.</p>'+selectField('level','Declared level',['UNVERIFIED','NORMAL','ENHANCED MONITORING','PARTIAL ACTIVATION','FULL ACTIVATION'],CFG.activation.level)+field('state','Incident / event name',CFG.activation.state)+textField('note','Declaration / posture note',CFG.activation.note)+field('by','Authorized representative / agency',OPS.activation.by,'text',true),async f=>{const by=operator(f);CFG.activation={level:f.get('level'),state:f.get('state'),note:f.get('note')};OPS.activation={by,confirmedAt:f.get('level')==='UNVERIFIED'?null:new Date().toISOString()};await saveOperationalChange('Recorded activation: '+f.get('level'),by);});}
+ESF_LABEL['s-unverified']='Not verified';
+function renderESF(){document.getElementById('esf').innerHTML=CFG.esf.map((row,i)=>{const r=OPS?.esf[row[0]]||{};const stale=r.confirmedAt&&Date.now()-Date.parse(r.confirmedAt)>240*60000;const status=r.confirmedAt?row[2]:'s-unverified';return `<div class="esf-item"><div class="e-n">${escapeHTML(row[0])}</div><div class="e-t">${escapeHTML(row[1])}</div><button class="status-pill ${stale?'s-amber':status}" onclick="cycleESF(${i})">${stale?'Delayed — '+ESF_LABEL[status]:ESF_LABEL[status]}</button><div class="ops-meta">${escapeHTML(r.confirmedAt?r.by+' · '+fmtTime(r.confirmedAt)+' ET':'No confirmation recorded')}</div><p class="small">${escapeHTML(r.needs||'Needs / issues not recorded')}</p></div>`;}).join('');}
+function cycleESF(i){const row=CFG.esf[i],r=OPS.esf[row[0]]||{};openOpsDialog('Verify '+row[0]+' — '+row[1],selectField('status','Readiness',['Not verified','Ready','Elevated','Activated'],ESF_LABEL[row[2]])+field('by','Responsible agency / operator',r.by,'text',true)+textField('needs','Needs / issues (enter None if confirmed)',r.needs),async f=>{const by=operator(f),status=f.get('status');CFG.esf[i][2]=Object.keys(ESF_LABEL).find(k=>ESF_LABEL[k]===status);OPS.esf[row[0]]={by,needs:f.get('needs'),confirmedAt:status==='Not verified'?null:new Date().toISOString()};await saveOperationalChange('Verified '+row[0]+': '+status,by);});}
+function editHazard(id){const r=OPS.hazards[id]||{},h=HAZARDS.find(h=>h[0]===id);openOpsDialog('Verify '+h[1],selectField('status','Status',['Not verified','No reported disruption','Monitoring','Disrupted'],r.status||'Not verified')+textField('summary','Confirmed conditions / impacts',r.summary)+field('source','Report source (agency, reference, or URL)',r.source,'text',true)+field('by','Responsible agency / operator',r.by,'text',true),async f=>{const by=operator(f);if(f.get('status')!=='Not verified'&&!String(f.get('summary')).trim())throw Error('Enter confirmed conditions before verifying this hazard.');OPS.hazards[id]={status:f.get('status'),summary:f.get('summary'),source:f.get('source'),by,confirmedAt:f.get('status')==='Not verified'?null:new Date().toISOString()};await saveOperationalChange('Updated '+h[1]+': '+f.get('status'),by);});}
+function showActivity(){openOpsDialog('Operational activity history','<p class="small muted">Local history keeps the most recent 200 updates. An authenticated shared service must retain its own authoritative audit history.</p><ol class="ops-log">'+OPS.audit.map(r=>`<li>${escapeHTML(fmtTime(r.at)+' ET · '+r.by+' · '+r.action)}</li>`).join('')+'</ol>',null);}
+function validateShared(j){if(!j||j.revision==null||j.operations?.version!==1||!Array.isArray(j.esf)||j.esf.length!==CFG.esf.length||!j.activation||!j.thresholds)throw Error('Shared response does not match the documented operations schema.');for(let i=0;i<j.esf.length;i++)if(j.esf[i][0]!==CFG.esf[i][0]||!Object.hasOwn(ESF_LABEL,j.esf[i][2]))throw Error('Invalid shared ESF status.');if(!j.operations.audit||!Array.isArray(j.operations.audit))throw Error('Shared history is missing.');}
+function configureShared(){openOpsDialog('Shared operations connection','<p>Editing is local by default. Connect only to your organization’s approved authenticated service. Connecting loads its shared operational status. Later saves send activation, ESF reports, hazard reports, thresholds, and operator details to that service.</p><p class="small muted">The service must implement authenticated GET/PUT, CORS for this dashboard, and revision checks. No API keys are stored in this page. Use the service’s existing sign-in session.</p>'+field('url','Approved HTTPS operations endpoint',SYNC?.url||'','url',true)+'<div class="ops-actions"><button type="button" class="btn" onclick="SYNC=null;renderOperations();document.getElementById(\'ops-dialog\').close()">Disconnect; keep local copy</button></div>',async f=>{const u=new URL(f.get('url'));if(u.protocol!=='https:')throw Error('Use an HTTPS endpoint.');const r=await fetch(u.href,{credentials:'include',headers:{Accept:'application/json'}});if(!r.ok)throw Error('Connection failed ('+r.status+'). Sign into your approved service first.');const j=await r.json();validateShared(j);OPS=j.operations;CFG.activation=j.activation;CFG.esf=j.esf;CFG.thresholds=j.thresholds;SYNC={url:u.href,revision:j.revision};persistOperations('Loaded shared operational status','Shared service');});}
+function thresholdStations(){return [...USGS_SITES,...USACE_GAUGES.map((g,i)=>({id:'usace'+i,name:g.name+' (USACE elevation, IGLD 1985)'}))];}
+function openDrawer(){
+  openLegacyDrawer();
+  document.getElementById('esf-editor').innerHTML='<p class="hint">Use Verify / update on the response board to record agency, time, and needs.</p><button class="btn" onclick="closeDrawer();editActivation()">Record activation with representative</button>';
+  for(const id of ['set-act-level','set-act-state','set-act-note'])document.getElementById(id).disabled=true;
+  document.getElementById('thresh-editor').innerHTML=thresholdStations().map(g=>{const t=CFG.thresholds[g.id]||{};return `<fieldset><legend>${escapeHTML(g.name)}</legend><div class="row4">${['action','minor','moderate','major'].map(k=>`<div><label for="th-${g.id}-${k}">${k}</label><input id="th-${g.id}-${k}" data-th="${g.id}.${k}" type="number" step="0.01" value="${t[k]??''}"></div>`).join('')}</div>${['source','datum','by'].map(k=>`<label for="th-${g.id}-${k}">${{source:'Official threshold source / reference',datum:'Datum (feet; must match observation)',by:'Verified by agency / operator'}[k]}</label><input id="th-${g.id}-${k}" data-meta="${g.id}.${k}" value="${escapeHTML(t[k]||'')}">`).join('')}<label><input style="width:auto" type="checkbox" data-match="${g.id}" ${t.datumMatches?'checked':''}> I verified that threshold units and datum match this station’s reading.</label><p class="hint">${t.verifiedAt?'Last verified '+fmtTime(t.verifiedAt)+' ET':'Threshold unavailable until verified'}</p></fieldset>`;}).join('');
+}
+function saveSettings(){
+  if(SYNC){alert('Disconnect shared operations before changing local display and threshold settings.');return;}
+  const staged=structuredClone(CFG.thresholds);
+  for(const inp of document.querySelectorAll('[data-th]')){const [id,key]=inp.dataset.th.split('.');staged[id]??={};staged[id][key]=inp.value===''?null:Number(inp.value);}
+  for(const inp of document.querySelectorAll('[data-meta]')){const [id,key]=inp.dataset.meta.split('.');staged[id][key]=inp.value.trim();}
+  for(const inp of document.querySelectorAll('[data-match]'))staged[inp.dataset.match].datumMatches=inp.checked;
+  for(const g of thresholdStations()){
+    const t=staged[g.id]||{},values=['action','minor','moderate','major'].map(k=>t[k]).filter(v=>v!=null);
+    if(values.some(v=>!Number.isFinite(v))||values.some((v,i)=>i&&v<=values[i-1])){alert(g.name+': thresholds must be finite and increase from action through major.');return;}
+    if(values.length&&(!t.source||!t.datum||!t.by||!t.datumMatches)){alert(g.name+': record the source, datum, verifier, and confirm the datum match.');return;}
+    if(values.length&&g.id.startsWith('usace')&&!/IGLD\s*1985/i.test(t.datum)){alert(g.name+': USACE thresholds must use IGLD 1985 in feet.');return;}
+    const previous=CFG.thresholds[g.id]||{};
+    if(JSON.stringify({...t,verifiedAt:null})!==JSON.stringify({...previous,verifiedAt:null}))t.verifiedAt=values.length?new Date().toISOString():null;
+  }
+  CFG.thresholds=staged;CFG.reloadHours=Math.max(1,parseInt(document.getElementById('set-reload').value)||6);CFG.chime=document.getElementById('set-chime').checked;CFG.wake=document.getElementById('set-wake').checked;
+  try{persistOperations('Updated display settings / threshold references',Object.values(staged).map(t=>t.by).filter(Boolean).join('; ')||'Local operator');applyWake();scheduleReload();loadWater();loadUSACE();closeDrawer();}catch(e){alert(e.message);}
+}
+
+function resetSettings(){if(SYNC){alert('Disconnect shared operations before resetting local settings.');return;}if(!confirm('Reset local display settings and thresholds? Verified operational reports and history will be preserved.'))return;const {activation,esf}=CFG;CFG={...structuredClone(DEFAULTS),activation,esf};saveCfg();applyTheme();applyKiosk();renderActivation();renderESF();updateStatusStrip();loadWater();closeDrawer();}
+function genSITREP(){let reportHTML='';const win={document:{write:html=>{reportHTML=html},close(){}}};const section=(title,text)=>`<h2>${escapeHTML(title)}</h2><div class="box">${escapeHTML(text)}</div>`;const o=OPS.overview;const hazards=HAZARDS.map(([id,name])=>{const r=OPS.hazards[id]||{};return `${name}: ${r.confirmedAt?r.status+' · '+ageLabel(r.confirmedAt):'Not verified'}\n${r.summary||'No confirmed report'}\n${r.source||'Source not recorded'} · ${r.by||'No verifier'} · ${r.confirmedAt?fmtTime(r.confirmedAt)+' ET':'No confirmation time'}`;}).join('\n\n');const feeds=Object.keys(FEEDS).map(k=>`${FEEDS[k]}: ${feedLabel(k)} · ${feedState[k]?.success?'retrieved '+fmtTime(feedState[k].success)+' ET':'No successful retrieval'}${feedState[k]?.observed?' · '+ageLabel(feedState[k].observed,feedState[k].limit):''}`).join('\n');const alerts=feedLabel('alerts')==='Current'?(LAST_ALERTS.length?LAST_ALERTS.map(p=>`${p.event} (${p.severity}) — ${localArea(p)}\n${p.areaDesc}\nUntil ${fmtTime(p.expires||p.ends)} ET`).join('\n\n'):'No active NWS alerts in monitored zones.'):'Current alerts not verified. Last retrieved alerts may be stale. Check NWS.';win.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SCC EOC Situation Report</title><style>body{font:14px/1.5 Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#111}h1{font-size:22px}h2{font-size:16px;border-bottom:1px solid #999}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #aaa;padding:6px;text-align:left;overflow-wrap:anywhere}.box{white-space:pre-wrap;overflow-wrap:anywhere}section,tr{break-inside:avoid}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print / Save PDF</button><h1>St. Clair County EOC — Situation Report</h1><p>Generated ${escapeHTML(new Date().toLocaleString('en-US',{timeZone:'America/Detroit'}))} ET · ${SYNC?'Shared operations':'Local browser reports — not synchronized'}</p>${section('Declared activation',document.getElementById('activation').innerText)}${section('Operational overview',`Affected areas: ${o.areas||'Not recorded'}\nObjectives: ${o.objectives||'Not recorded'}\nResource needs: ${o.needs||'Not recorded'}\nNext briefing: ${o.briefing?fmtTime(o.briefing)+' ET':'Not recorded'}\nVerified by: ${o.by||'Not verified'} ${o.confirmedAt?fmtTime(o.confirmedAt)+' ET':''}`)}${section('Active alerts',alerts)}${section('Infrastructure, health, and shelter',hazards)}<h2>ESF readiness</h2><table><tr><th>ESF</th><th>Function</th><th>Status</th><th>Agency / confirmed</th><th>Needs / issues</th></tr>${CFG.esf.map(r=>{const v=OPS.esf[r[0]]||{};return `<tr><td>${escapeHTML(r[0])}</td><td>${escapeHTML(r[1])}</td><td>${escapeHTML(v.confirmedAt?ESF_LABEL[r[2]]+' · '+ageLabel(v.confirmedAt,240):'Not verified')}</td><td>${escapeHTML(v.by||'Not recorded')}<br>${escapeHTML(v.confirmedAt?fmtTime(v.confirmedAt)+' ET':'')}</td><td>${escapeHTML(v.needs||'Not recorded')}</td></tr>`;}).join('')}</table>${section('Current conditions',document.getElementById('conditions').innerText)}${section('Water levels / threshold verification',document.getElementById('water').innerText+'\n'+document.getElementById('usace').innerText)}${section('Hazardous weather outlook',document.getElementById('hwo').innerText)}${section('Feed health and data gaps',feeds)}<p>Unofficial situational awareness aid. Confirm life-safety decisions through official NWS and emergency-management channels.</p></body></html>`);win.document.close();openOpsDialog('Printable situation report','<button type="button" class="btn" onclick="document.getElementById(\'sitrep-frame\').contentWindow.print()">Print / Save PDF</button><iframe id="sitrep-frame" title="Situation report" style="width:100%;height:65vh;background:white;border:1px solid #999;margin-top:12px" srcdoc="'+escapeHTML(reportHTML)+'"></iframe>',null);}
+
+initializeOperations();
 applyTheme(); applyKiosk(); renderActivation(); renderESF(); renderLinks(); updateStatusStrip();
 initMap(); refreshAll(); applyWake(); scheduleReload();
 setInterval(refreshAll, 5*60*1000);

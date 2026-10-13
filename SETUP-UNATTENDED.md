@@ -9,7 +9,7 @@ The dashboard is built to run for days on its own. This guide covers what it doe
 - **Watchdog self-heal** — if no feed succeeds for **20 minutes** (frozen network, stuck tab), the page reloads itself automatically.
 - **Offline detection** — a red banner appears when the network drops and clears itself when the connection returns, then forces a refresh.
 - **Screen wake-lock** — asks the browser to keep the display awake (toggle in Settings). OS power settings below are still the reliable backstop.
-- **Feed health row** — green/red dots at the top show at a glance whether any source is down.
+- **Feed health row** — Current / Delayed / Unavailable labels distinguish retrieval times from source observation ages. Last successful readings are retained across failed refreshes and reloads where browser storage is available.
 
 ## Recommended: point the wall display at the live URL
 
@@ -58,13 +58,19 @@ Click **🖥 Display** in the header to enable kiosk view (larger type sized for
 
 ## Staff controls (no password)
 
-- **ESF board** — click any status pill to cycle **Ready → Elevated → Activated**.
-- **Activation banner, flood thresholds, reload interval, chime, wake-lock** — the **⚙ Settings** drawer.
+- **ESF board** — click a status button to record **Not verified / Ready / Elevated / Activated**, the responsible agency/operator, and needs. Confirmations become delayed after four hours.
+- **Activation** — use **Record activation** to record a declared level, authorized representative, and time. Unconfirmed legacy activation is shown as Not verified.
+- **Overview and other hazards** — use the update buttons to record affected areas, objectives, resource needs, briefing time, and sourced manual reports. Hazard reports become delayed after two hours.
+- **Flood thresholds, reload interval, chime, wake-lock** — the **⚙ Settings** drawer.
 - All changes save in that browser (localStorage). They are per-machine, so the wall display and someone's laptop each keep their own settings.
 
 ## Flood-stage thresholds — set these once
 
-River levels show category context ("2.1 ft below action stage") **only after you enter the official numbers**. Open **⚙ Settings → River Flood-Stage Thresholds**, look each gauge up on NWS AHPS (water.noaa.gov), and enter Action / Minor / Moderate / Major in feet. Leave a gauge blank if it has no defined flood stage (e.g., Great Lakes connecting channels like the St. Clair River, which are lake-level driven rather than classic flood-stage gauges).
+River levels show category context ("2.1 ft below action stage") only after a verifier records official numbers, source, datum, and matching units for each station. Open **⚙ Settings → River Flood-Stage Thresholds** and verify the reference on the NWS National Water Prediction Service (water.noaa.gov) or responsible gauge agency. USACE thresholds must use IGLD 1985 in feet. Leave thresholds blank where no official stage is defined; the dashboard shows Threshold unavailable rather than Normal.
+
+## Shared operations
+
+Editing remains local by default. The optional **Shared connection** adapter requires an organization-approved authenticated service implementing the contract in README.md. No service is provisioned. Connecting is explicit and lasts for the current page session; full page reloads return to local mode. Do not use a publicly writable endpoint or put credentials in the page source.
 
 ## Updating the hosted version
 
