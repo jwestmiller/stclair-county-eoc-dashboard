@@ -16,4 +16,10 @@ assert.equal(run('fromEasternInput("2026-10-13T14:00")'),'2026-10-13T18:00:00.00
 ctx.openOpsDialog=(title,body)=>report=body;
 run('OPS.overview.areas="<img src=x onerror=alert(1)>";OPS.esf["ESF-1"]={by:"Test agency",needs:"Test needs",confirmedAt:new Date().toISOString()};CFG.esf[0][2]="s-amber";persistOperations("Test update","Test agency");genSITREP()');assert(report.includes('&amp;lt;img'));assert(!report.includes('<img src=x'));for(const word of ['Test needs','Operational overview','Feed health and data gaps','Infrastructure, health, and shelter'])assert(report.includes(word));assert.equal(run('OPS.audit[0].action'),'Test update');
 assert.throws(()=>run('validateShared({revision:1})'));
+assert.equal(run('COUNTY_GEOMETRY.type'),'MultiPolygon');
+assert.equal(run('COUNTY_GEOMETRY.coordinates.length>0'),true);
+assert.equal(run('validMapRecord({id:"test",type:"Shelter",lat:42.97,lon:-82.42})'),true);
+assert.equal(run('validMapRecord({id:"test",type:"Shelter",lat:142,lon:-82.42})'),false);
+run('OPS.incidents=[{id:"test",title:"Test location",type:"Shelter",status:"Reported",lat:42.97,lon:-82.42,by:"Test agency",source:"Test report",notes:"Test needs",at:new Date().toISOString()}];persistOperations("Added map location","Test agency");genSITREP()');
+assert(report.includes('Mapped operational locations'));assert(report.includes('Test location'));
 console.log('PASS: syntax, unverified migration, failed-feed retention, stale/partial feeds, threshold verification, Eastern Time/DST, audit persistence, and escaped SITREP content.');

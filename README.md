@@ -39,6 +39,16 @@ The dashboard pulls live, keyless public data directly in the browser and auto-r
 - Editing remains local to this browser by default. No shared endpoint is enabled or remembered automatically.
 - Use **Shared connection** only after your organization provides an approved authenticated service implementing the contract below.
 
+## County operations map
+
+- OpenStreetMap streets and USGS topographic backgrounds require no API key. The previous CARTO background was removed after it returned API-key-required tiles. Tile backgrounds need internet access; no tiles are bulk downloaded or cached for offline use.
+- The official NWS MIC147 county geometry was retrieved on October 13, 2026 and bundled with the page. Fit county resets the view; Fit incidents frames all recorded manual locations; Fullscreen expands the map.
+- Toggle county, alerts, gauges, incidents, shelters, and closures independently. Alert retrieval uses the same county and marine zones as the alert board. Solid shapes are NWS alert polygons; dashed shapes are affected-zone boundaries and are not precise hazard footprints. Failed overlay refreshes retain the previous shapes with a stale-data message.
+- Select Add location, then click the map, or use Enter coordinates. Records require a name, type, status, report source, operator, and valid coordinates. Edit existing records through their popups or the manual location list. Use Resolved to retire a report while retaining its history.
+- Manual records save in local browser storage, appear in SITREP, and are included in the prepared shared-service payload under operations.incidents. No automatic shelter or closure feed is claimed.
+- Gauge popups display USGS level, observation age, trend, discharge, feed health, verified thresholds where configured, and an official source link.
+- Attribution remains visible. Sources: https://operations.osmfoundation.org/policies/tiles/ and https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer .
+
 ## Shared operations API contract
 
 GitHub Pages does not provide authenticated shared storage. The prepared browser adapter uses an existing service sign-in session (`credentials: include`) and an HTTPS endpoint entered explicitly by the operator. Do not put API keys in this public repository.
