@@ -49,6 +49,12 @@ The dashboard pulls live, keyless public data directly in the browser and auto-r
 - Gauge popups display USGS level, observation age, trend, discharge, feed health, verified thresholds where configured, and an official source link.
 - Attribution remains visible. Sources: https://operations.osmfoundation.org/policies/tiles/ and https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer .
 
+## DTE county outage map
+
+The infrastructure / power-outage area embeds the same DTE/KUBRA map host used by DTE’s official outage center. It opens in County mode at latitude 42.843832, longitude -82.707501, zoom 9, framing St. Clair County. The provider’s public client supports lat/lng/zoom and county-view query parameters; its embed headers permit framing. The source URL is https://d1ff4iuzxu9t4h.cloudfront.net/?lat=42.843832&lng=-82.707501&zoom=9&c=VisibilityConfig&o=ViewByCounty .
+
+Select a shaded county to inspect DTE’s county details. Reset to county / refresh restores the initial view. The larger-map link opens the same county view; the official-center link opens https://outage.dteenergy.com/map . This map covers DTE customers only, and provider data refresh stays under DTE’s control. Dashboard manual power-status reports remain separate. The iframe is kept outside periodic card redraws so normal status updates do not reload it. No outage totals are copied into the dashboard or claimed as county totals.
+
 ## Shared operations API contract
 
 GitHub Pages does not provide authenticated shared storage. The prepared browser adapter uses an existing service sign-in session (`credentials: include`) and an HTTPS endpoint entered explicitly by the operator. Do not put API keys in this public repository.
