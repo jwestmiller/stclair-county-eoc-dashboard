@@ -54,7 +54,7 @@ Open **Task Scheduler** → Create Task:
 - Settings: check **"If the task fails, restart every 1 minute"** and **"Run task as soon as possible after a scheduled start is missed."**
 
 ### 5. Press the dashboard's "Display" button once
-Click **🖥 Display** in the header to enable kiosk view (larger type sized for a room). It's remembered in the browser, so it stays on across reloads.
+Click **🖥 Display** to open the wall presentation: Overview, Weather & Water, Infrastructure, Response, and DTE Outages. Pages rotate every 40 seconds by default; choose 30/40/45 seconds, pause, or navigate manually. Select **Fullscreen** to fill the screen and **Operator view** to return to editing. Mode, interval, and pause preference are remembered locally; reloads restart at Overview. Use native 1080p or 4K and normal browser zoom for the intended large-text layout.
 
 ## Staff controls (no password)
 

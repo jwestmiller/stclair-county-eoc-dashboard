@@ -31,6 +31,16 @@ The dashboard pulls live, keyless public data directly in the browser and auto-r
 - **Generate SITREP** — one click opens an in-page printable report with the operational overview, non-weather hazard reports, ESF verification, water levels, and feed health/data gaps.
 - **Unattended operation** — 5-min feed refresh, periodic full reload, 20-min watchdog self-heal, offline detection, and screen wake-lock. See `SETUP-UNATTENDED.md`.
 
+## Wall display mode
+
+Select **Display** to open a presentation designed for a room display. It starts on Overview and rotates every 40 seconds by default through Overview, Weather & Water, Infrastructure, Response, and DTE Outages. Choose 30, 40, or 45 seconds, pause/resume, use Previous/Next, or select any page directly. Fullscreen uses the browser fullscreen control; Operator view returns to the complete editable dashboard. Display mode, interval, and pause preference are remembered in this browser; a page reload starts at Overview.
+
+The persistent header shows declared activation, incident name, clock, and NWS monitoring priority. Main text scales from roughly 29 px at 1080p to 58 px at 4K. Short summaries show affected areas, objectives, briefing time, power/road impacts, response readiness, radar/forecast, and gauges. Longer reports are abbreviated with an explicit prompt to use Operator view. Automatic summaries reuse the same verification and stale-data rules as the detailed dashboard; unavailable alert data never becomes an all-clear.
+
+Source retrieval and observation ages are shown separately in large text. Manual reports retain confirmation-age warnings. An offline banner stays visible across all pages. The DTE page gives the provider’s map its own large area; provider-controlled labels are not artificially enlarged, and the manual power summary is shown on Overview/Infrastructure. The same iframe returns to its original position when leaving Display mode. Wall content updates without restarting the radar animation.
+
+Keyboard shortcuts when focus is outside controls: Left/Right for pages, Space to pause/resume, Escape to leave wall mode when the browser is not fullscreen. The original activation, ESF, hazard, map-location, and SITREP controls remain in Operator view.
+
 ## Operational reporting
 
 - The overview records affected areas, incident objectives, outstanding resource needs, and next briefing (Eastern Time).

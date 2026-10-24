@@ -22,4 +22,13 @@ assert.equal(run('validMapRecord({id:"test",type:"Shelter",lat:42.97,lon:-82.42}
 assert.equal(run('validMapRecord({id:"test",type:"Shelter",lat:142,lon:-82.42})'),false);
 run('OPS.incidents=[{id:"test",title:"Test location",type:"Shelter",status:"Reported",lat:42.97,lon:-82.42,by:"Test agency",source:"Test report",notes:"Test needs",at:new Date().toISOString()}];persistOperations("Added map location","Test agency");genSITREP()');
 assert(report.includes('Mapped operational locations'));assert(report.includes('Test location'));
+run('CFG.kiosk=true;CFG.wallPaused=false;CFG.wallSeconds=40;WALL_LAST_SWITCH=1000');
+assert.equal(run('wallRotationDue(40999)'),false);assert.equal(run('wallRotationDue(41000)'),true);
+run('CFG.wallPaused=true');assert.equal(run('wallRotationDue(999999)'),false);
+run('CFG.kiosk=false;CFG.wallPaused=false');assert.equal(run('wallRotationDue(999999)'),false);
+run('CFG.wallSeconds=999');assert.equal(run('wallSeconds()'),40);
+run('feedDown("alerts")');assert(run('wallDataStatus("alerts")').includes('Unavailable'));
+assert(run('wallAlerts()').includes('not verified'));assert(!run('wallAlerts()').includes('No active NWS alerts'));
+assert.equal(run('wallManualStatus({})'),'Not verified');
+assert(run('wallManualStatus({confirmedAt:new Date(Date.now()-3*3600000).toISOString()})').includes('Delayed'));
 console.log('PASS: syntax, unverified migration, failed-feed retention, stale/partial feeds, threshold verification, Eastern Time/DST, audit persistence, and escaped SITREP content.');
